@@ -20,11 +20,19 @@ builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
-// Apply any pending migrations
+// Apply any pending migrations (with error handling)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.MigrateAsync();
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        // Log migration errors but don't crash the app
+        Console.WriteLine($"Migration warning: {ex.Message}");
+    }
 }
 
 if (!app.Environment.IsDevelopment())
