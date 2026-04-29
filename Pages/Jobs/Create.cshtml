@@ -25,6 +25,12 @@
             <span asp-validation-for="Input.SiteAddress"></span>
         </label>
 
+        <label class="wide">
+            Job Reference Number
+            <input asp-for="Input.JobName" placeholder="e.g., 20260429_CLIENT_ADDRESS" />
+            <span asp-validation-for="Input.JobName"></span>
+        </label>
+
         <label>
             Status
             <select asp-for="Input.Status">

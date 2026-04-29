@@ -37,7 +37,12 @@ public class CreateModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        var jobName = await _jobNameService.GenerateAsync(Input.DateStarted, Input.ClientName, Input.SiteAddress);
+        // Check if job name already exists
+        if (await _db.EvacJobs.AnyAsync(j => j.JobName == Input.JobName))
+        {
+            ModelState.AddModelError("Input.JobName", "A job with this reference already exists.");
+            return Page();
+        }
 
         var job = new EvacJob
         {
@@ -46,14 +51,14 @@ public class CreateModel : PageModel
             SiteAddress = Input.SiteAddress.Trim(),
             Status = Input.Status,
             Notes = Input.Notes,
-            JobName = jobName,
+            JobName = Input.JobName.Trim(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         if (DraftPdf is not null)
         {
-            var saved = await _pdfStorage.SaveDraftPdfAsync(DraftPdf, jobName);
+            var saved = await _pdfStorage.SaveDraftPdfAsync(DraftPdf, Input.JobName.Trim());
             job.DraftPdfFileName = saved.fileName;
             job.DraftPdfPath = saved.relativePath;
         }
@@ -75,6 +80,9 @@ public class CreateModel : PageModel
 
         [Required]
         public string SiteAddress { get; set; } = string.Empty;
+
+        [Required]
+        public string JobName { get; set; } = string.Empty;
 
         public string Status { get; set; } = JobStatus.New;
 
