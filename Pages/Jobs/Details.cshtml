@@ -32,7 +32,7 @@
                     <span class="status-pill status-@Model.Job.Status.ToLower().Replace(" ", "-")">@Model.Job.Status</span>
                     @if (Model.Job.StatusUpdatedAt.HasValue)
                     {
-                        <span class="status-timestamp">Updated: @Model.Job.StatusUpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                        <span class="status-timestamp">Updated: @Model.Job.StatusUpdatedAt.Value.ToSydneyString()</span>
                     }
                 </dd>
 
@@ -104,7 +104,7 @@
                                 @if (Model.Approval.IsApproved)
                                 {
                                     <span style="color: #28a745; font-weight: 600;">✓ Approved on
-                                        @Model.Approval.ApprovedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                                        @Model.Approval.ApprovedAt?.ToSydneyString()</span>
                                     }
                                 else
                                     {
@@ -203,7 +203,7 @@
                                         <div class="note-item">
                                             <p class="note-content">@note.Content</p>
                                             <span class="note-author">by @note.AddedBy</span>
-                                            <span class="note-date">@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span class="note-date">@note.CreatedAt.ToSydneyString()</span>
                                             @if (HttpContext.Session.GetString("Role") == "Admin")
                                             {
                                                 <div class="note-actions" style="margin-top: 8px; display: flex; gap: 8px;">
