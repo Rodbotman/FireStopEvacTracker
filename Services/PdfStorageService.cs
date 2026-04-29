@@ -41,10 +41,20 @@ public class PdfStorageService
         if (string.IsNullOrWhiteSpace(relativePath))
             return;
 
-        var cleanPath = relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
+        try
+        {
+            var cleanPath = relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
 
-        if (File.Exists(fullPath))
-            File.Delete(fullPath);
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Warning: Could not delete PDF file at {relativePath}: {ex.Message}");
+            // Don't throw - this is a best-effort cleanup operation
+        }
     }
 }

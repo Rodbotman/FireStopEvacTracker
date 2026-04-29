@@ -256,24 +256,40 @@ public class DetailsModel : PageModel
             return Forbid();
         }
 
-        var job = await _db.EvacJobs
-            .Include(j => j.Approvals)
-            .FirstOrDefaultAsync(j => j.Id == id);
-
-        if (job is null)
-            return NotFound();
-
-        // Delete associated PDF if exists
-        if (!string.IsNullOrWhiteSpace(job.DraftPdfPath))
+        try
         {
-            _pdfStorage.DeletePdfIfExists(job.DraftPdfPath);
+            var job = await _db.EvacJobs
+                .Include(j => j.Approvals)
+                .FirstOrDefaultAsync(j => j.Id == id);
+
+            if (job is null)
+                return NotFound();
+
+            // Delete associated PDF if exists
+            if (!string.IsNullOrWhiteSpace(job.DraftPdfPath))
+            {
+                try
+                {
+                    _pdfStorage.DeletePdfIfExists(job.DraftPdfPath);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with job deletion
+                    System.Diagnostics.Debug.WriteLine($"Error deleting PDF: {ex.Message}");
+                }
+            }
+
+            // Delete the job (cascade delete will remove related approvals and notes)
+            _db.EvacJobs.Remove(job);
+            await _db.SaveChangesAsync();
+
+            return RedirectToPage("/Jobs/Index");
         }
-
-        // Delete the job (cascade delete will remove related approvals and notes)
-        _db.EvacJobs.Remove(job);
-        await _db.SaveChangesAsync();
-
-        return RedirectToPage("/Jobs/Index");
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting job: {ex.Message}");
+            throw;
+        }
     }
 
     public class UpdateJobInput
