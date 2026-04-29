@@ -423,6 +423,36 @@ dd {
     font-style: italic;
 }
 
+.note-edit-btn,
+.note-delete-btn {
+    background: none;
+    border: 1px solid #ddd;
+    color: #333;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-family: 'Roboto', sans-serif;
+}
+
+.note-edit-btn:hover {
+    background: #e8f4f8;
+    border-color: #0069d9;
+    color: #0069d9;
+}
+
+.note-delete-btn {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.note-delete-btn:hover {
+    background: #ffe5e8;
+    border-color: #bb2d3b;
+    color: #bb2d3b;
+}
+
 /* ==================== ADMIN PANEL STYLES ==================== */
 
 .admin-container {

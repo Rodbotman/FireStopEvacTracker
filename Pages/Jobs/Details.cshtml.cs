@@ -31,6 +31,12 @@ public class DetailsModel : PageModel
     public string? NoteAddedBy { get; set; }
 
     [BindProperty]
+    public int? EditNoteId { get; set; }
+
+    [BindProperty]
+    public string? EditNoteContent { get; set; }
+
+    [BindProperty]
     public IFormFile? NewDraftPdf { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
@@ -148,6 +154,66 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
 
+    public async Task<IActionResult> OnPostEditNoteAsync(int id)
+    {
+        // Check if user is authenticated
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (userId == null)
+        {
+            return RedirectToPage("/Login");
+        }
+
+        // Check if user is admin
+        var userRole = HttpContext.Session.GetString("UserRole");
+        if (userRole != "Admin")
+        {
+            return Forbid();
+        }
+
+        if (EditNoteId == null || string.IsNullOrWhiteSpace(EditNoteContent))
+            return RedirectToPage(new { id });
+
+        var note = await _db.JobNotes.FindAsync(EditNoteId);
+        if (note is null)
+            return NotFound();
+
+        note.Content = EditNoteContent;
+        note.CreatedAt = DateTime.UtcNow; // Update timestamp to show it was edited
+
+        await _db.SaveChangesAsync();
+
+        EditNoteId = null;
+        EditNoteContent = null;
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostDeleteNoteAsync(int id, int noteId)
+    {
+        // Check if user is authenticated
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (userId == null)
+        {
+            return RedirectToPage("/Login");
+        }
+
+        // Check if user is admin
+        var userRole = HttpContext.Session.GetString("UserRole");
+        if (userRole != "Admin")
+        {
+            return Forbid();
+        }
+
+        var note = await _db.JobNotes.FindAsync(noteId);
+        if (note is null)
+            return NotFound();
+
+        _db.JobNotes.Remove(note);
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage(new { id });
+    }
+
     public async Task<IActionResult> OnPostGenerateShareCodeAsync(int id)
     {
         var job = await _db.EvacJobs.FindAsync(id);
@@ -172,6 +238,42 @@ public class DetailsModel : PageModel
         return new string(Enumerable.Range(0, 16)
             .Select(_ => chars[random.Next(chars.Length)])
             .ToArray());
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int id)
+    {
+        // Check if user is authenticated
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (userId == null)
+        {
+            return RedirectToPage("/Login");
+        }
+
+        // Check if user is admin
+        var userRole = HttpContext.Session.GetString("UserRole");
+        if (userRole != "Admin")
+        {
+            return Forbid();
+        }
+
+        var job = await _db.EvacJobs
+            .Include(j => j.Approvals)
+            .FirstOrDefaultAsync(j => j.Id == id);
+
+        if (job is null)
+            return NotFound();
+
+        // Delete associated PDF if exists
+        if (!string.IsNullOrWhiteSpace(job.DraftPdfPath))
+        {
+            _pdfStorage.DeletePdfIfExists(job.DraftPdfPath);
+        }
+
+        // Delete the job (cascade delete will remove related approvals and notes)
+        _db.EvacJobs.Remove(job);
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage("/Jobs/Index");
     }
 
     public class UpdateJobInput
