@@ -20,6 +20,13 @@ builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
+// Apply any pending migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
