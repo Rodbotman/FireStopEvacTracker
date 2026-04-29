@@ -1,0 +1,64 @@
+@page
+@model FireStopEvacTracker.Pages.Jobs.CreateModel
+@{
+    ViewData["Title"] = "New Job";
+}
+
+<h1>New Evacuation Diagram Job</h1>
+
+<form method="post" enctype="multipart/form-data" class="form-card">
+    <div class="form-grid">
+        <label>
+            Date Started
+            <input asp-for="Input.DateStarted" type="date" />
+        </label>
+
+        <label>
+            Client Name
+            <input asp-for="Input.ClientName" />
+            <span asp-validation-for="Input.ClientName"></span>
+        </label>
+
+        <label class="wide">
+            Site Address
+            <input asp-for="Input.SiteAddress" />
+            <span asp-validation-for="Input.SiteAddress"></span>
+        </label>
+
+        <label>
+            Status
+            <select asp-for="Input.Status">
+                @foreach (var status in JobStatus.All)
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+        </label>
+
+        <label class="wide">
+            Attach Draft PDF
+            <input asp-for="DraftPdf" type="file" accept="application/pdf" />
+        </label>
+
+        <label class="wide">
+            Notes
+            <textarea asp-for="Input.Notes"></textarea>
+        </label>
+    </div>
+
+    <section class="checklist-preview">
+        <h2>Customer Review Checklist Icons</h2>
+        <div class="icon-row">
+            <div><img src="/icons/extinguisher.svg" alt="" />Extinguishers</div>
+            <div><img src="/icons/blanket.svg" alt="" />Fire Blanket</div>
+            <div><img src="/icons/hose-reel.svg" alt="" />Hose Reel</div>
+            <div><img src="/icons/exit.svg" alt="" />Exits</div>
+            <div><img src="/icons/first-aid.svg" alt="" />First Aid</div>
+        </div>
+    </section>
+
+    <div class="actions">
+        <button class="primary-button" type="submit">Save Job</button>
+        <a class="secondary-button" href="/Jobs">Cancel</a>
+    </div>
+</form>

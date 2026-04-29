@@ -1,0 +1,130 @@
+@page "{id:int}"
+@model FireStopEvacTracker.Pages.Jobs.DetailsModel
+@{
+    ViewData["Title"] = "Job Details";
+}
+
+@if (Model.Job is not null)
+{
+    <div class="page-header">
+        <div>
+            <h1>@Model.Job.GetShortJobName()</h1>
+            <p>@Model.Job.ClientName — @Model.Job.SiteAddress</p>
+        </div>
+        <a class="secondary-button" href="/Jobs">Back to Jobs</a>
+    </div>
+
+    <div class="details-grid">
+        <section class="details-card">
+            <h2>Job Details</h2>
+            <dl>
+                <dt>Date Started</dt>
+                <dd>@Model.Job.DateStarted.ToString("dd/MM/yyyy")</dd>
+
+                <dt>Client</dt>
+                <dd>@Model.Job.ClientName</dd>
+
+                <dt>Address</dt>
+                <dd>@Model.Job.SiteAddress</dd>
+
+                <dt>Status</dt>
+                <dd>
+                    <span class="status-pill status-@Model.Job.Status.ToLower().Replace(" ", "-")">@Model.Job.Status</span>
+                    @if (Model.Job.StatusUpdatedAt.HasValue)
+                    {
+                        <span class="status-timestamp">Updated: @Model.Job.StatusUpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    }
+                </dd>
+
+                <dt>Notes</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.Job.Notes) ? "-" : Model.Job.Notes)</dd>
+            </dl>
+        </section>
+
+        <section class="details-card">
+            <h2>Draft PDF</h2>
+
+            @if (Model.Job.HasPdf)
+            {
+                <p><strong>@Model.Job.DraftPdfFileName</strong></p>
+                
+                <!-- PDF Preview -->
+                <div class="pdf-preview-container">
+                    <object data="@Model.Job.DraftPdfPath" type="application/pdf" class="pdf-viewer">
+                        <p>Unable to display PDF preview. <a href="@Model.Job.DraftPdfPath" target="_blank">Open PDF</a>
+                            instead.</p>
+                        </object>
+                    </div>
+                
+                    <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank">Open PDF</a>
+                }
+            else
+                {
+                    <p>No draft PDF attached.</p>
+                }
+
+                <form method="post" enctype="multipart/form-data" asp-page-handler="ReplacePdf" class="mini-form">
+                    <input type="file" asp-for="NewDraftPdf" accept="application/pdf" />
+                    <button type="submit">Attach / Replace PDF</button>
+                </form>
+
+                @if (Model.Job.HasPdf)
+                {
+                    <form method="post" asp-page-handler="RemovePdf" class="mini-form">
+                        <button type="submit" class="danger-button">Remove PDF</button>
+                    </form>
+                }
+            </section>
+
+            <section class="details-card wide-card">
+                <h2>Update Job</h2>
+                <div class="update-job-layout">
+                    <form method="post" asp-page-handler="Update" class="update-form">
+                        <label>
+                            Status
+                            <select asp-for="UpdateInput.Status">
+                                @foreach (var status in JobStatus.All)
+                                {
+                                    <option value="@status">@status</option>
+                                }
+                            </select>
+                        </label>
+
+                        <label>
+                            Notes
+                            <textarea asp-for="UpdateInput.Notes"></textarea>
+                        </label>
+
+                        <button class="primary-button" type="submit">Save Changes</button>
+                    </form>
+
+                    <form method="post" asp-page-handler="AddNote" class="notes-form">
+                        <label>
+                            Add Note
+                            <textarea asp-for="NewNote" placeholder="Add a timestamped note..."></textarea>
+                        </label>
+                        <label>
+                            Your Name
+                            <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" />
+                        </label>
+                        <button class="primary-button" type="submit">Add Note</button>
+                    </form>
+
+                    @if (Model.Job.JobNotes.Any())
+                    {
+                        <aside class="notes-sidebar">
+                            <h3>Notes</h3>
+                            @foreach (var note in Model.Job.JobNotes)
+                            {
+                                <div class="note-item">
+                                    <p class="note-content">@note.Content</p>
+                                    <span class="note-author">by @note.AddedBy</span>
+                                    <span class="note-date">@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                            }
+                        </aside>
+                    }
+                </div>
+            </section>
+        </div>
+    }

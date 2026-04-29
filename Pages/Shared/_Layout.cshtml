@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - FireStop Evac Tracker</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <img src="/img/firestop-logo.png" alt="FireStop" />
+            <div>
+                <div class="brand-title">FireStop Evac Tracker</div>
+                <div class="brand-subtitle">Evacuation diagram job tracking</div>
+            </div>
+        </div>
+        <nav>
+            @if (Context.Session.GetInt32("UserId") != null)
+            {
+                <a href="/Jobs">Jobs</a>
+                <a class="button-link" href="/Jobs/Create">New Job</a>
+                <div class="user-info">
+                    <span class="username">@Context.Session.GetString("FullName")</span>
+                    <span class="role-badge" title="User Role">@Context.Session.GetString("Role")</span>
+                    <a href="/Logout" class="logout-link">Logout</a>
+                </div>
+            }
+        </nav>
+    </header>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+</body>
+
+</html>

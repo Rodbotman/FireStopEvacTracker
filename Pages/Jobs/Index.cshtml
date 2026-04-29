@@ -1,0 +1,62 @@
+@page
+@model FireStopEvacTracker.Pages.Jobs.IndexModel
+@{
+    ViewData["Title"] = "Jobs";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Evacuation Diagram Jobs</h1>
+        <p>Track client jobs, draft PDFs, and review status.</p>
+    </div>
+    <a class="primary-button" href="/Jobs/Create">+ New Job</a>
+</div>
+
+<form method="get" class="filter-card">
+    <input type="text" name="Search" value="@Model.Search" placeholder="Search client, address or job name" />
+    <select name="Status">
+        <option value="">All statuses</option>
+        @foreach (var status in JobStatus.All)
+        {
+            <option value="@status" selected="@(Model.Status == status)">@status</option>
+        }
+    </select>
+    <button type="submit">Search</button>
+</form>
+
+<table class="jobs-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Job Name</th>
+            <th>Client</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>PDF</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var job in Model.Jobs)
+        {
+            <tr>
+                <td>@job.DateStarted.ToString("dd/MM/yyyy")</td>
+                <td class="job-name">@job.GetShortJobName()</td>
+                <td>@job.ClientName</td>
+                <td>@job.SiteAddress</td>
+                <td><span class="status-pill status-@job.Status.ToLower().Replace(" ", "-")">@job.Status</span></td>
+                <td>
+                    @if (job.HasPdf)
+                    {
+                        <span class="yes">Yes</span>
+                    }
+                    else
+                    {
+                        <span class="no">No</span>
+                    }
+                </td>
+                <td><a class="small-button" href="/Jobs/Details/@job.Id">Open</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
