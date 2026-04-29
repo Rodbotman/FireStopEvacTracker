@@ -204,7 +204,7 @@
                                             <p class="note-content">@note.Content</p>
                                             <span class="note-author">by @note.AddedBy</span>
                                             <span class="note-date">@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
-                                            @if (HttpContext.Session.GetString("UserRole") == "Admin")
+                                            @if (HttpContext.Session.GetString("Role") == "Admin")
                                             {
                                                 <div class="note-actions" style="margin-top: 8px; display: flex; gap: 8px;">
                                                     <button type="button" class="note-edit-btn"

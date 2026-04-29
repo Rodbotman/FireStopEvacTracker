@@ -164,7 +164,7 @@ public class DetailsModel : PageModel
         }
 
         // Check if user is admin
-        var userRole = HttpContext.Session.GetString("UserRole");
+        var userRole = HttpContext.Session.GetString("Role");
         if (userRole != "Admin")
         {
             return Unauthorized();
@@ -198,7 +198,7 @@ public class DetailsModel : PageModel
         }
 
         // Check if user is admin
-        var userRole = HttpContext.Session.GetString("UserRole");
+        var userRole = HttpContext.Session.GetString("Role");
         if (userRole != "Admin")
         {
             return Unauthorized();
@@ -250,7 +250,7 @@ public class DetailsModel : PageModel
         }
 
         // Check if user is admin
-        var userRole = HttpContext.Session.GetString("UserRole");
+        var userRole = HttpContext.Session.GetString("Role");
         if (userRole != "Admin")
         {
             return Unauthorized();
