@@ -7,7 +7,7 @@
 <div class="approval-page-container">
     <div class="approval-card">
         <div class="approval-header">
-            <h1>📋 Evacuation Diagram Approval</h1>
+            <h1>Evacuation Diagram Approval</h1>
             <p>Please review and approve your evacuation diagram before final installation</p>
         </div>
 
@@ -30,14 +30,14 @@
                     <div class="col-md-6">
                         <strong>Client:</strong> @Model.Job.ClientName<br />
                         <strong>Site Address:</strong> @Model.Job.SiteAddress<br />
-                        <strong>Job Name:</strong> @Model.Job.JobName
+                        <strong>Job Name:</strong> @Model.Job.GetShortJobName()
                     </div>
                     <div class="col-md-6">
                         <strong>Approval Progress:</strong>
                         <div class="progress" style="height: 20px; margin-top: 5px;">
-                            <div class="progress-bar" style="width: @(Model.Approval?.ChecklistItemsCompleted * 25)%"></div>
+                            <div class="progress-bar" id="progressBar" style="width: @(Model.Approval?.ChecklistItemsCompleted * 25)%; transition: width 0.3s ease;"></div>
                         </div>
-                        <small>@(Model.Approval?.ChecklistItemsCompleted ?? 0) of 4 items checked</small>
+                        <small><span id="itemsCount">@(Model.Approval?.ChecklistItemsCompleted ?? 0)</span> of 4 items checked</small>
                     </div>
                 </div>
             </div>
@@ -53,28 +53,32 @@
             <form method="post">
                 <div class="approver-info-section">
                     <label for="approverName">Your Name *</label>
-                    <input type="text" id="approverName" name="ApproverName" class="form-control" 
+                    <input type="text" id="approverName" name="ApproverName" class="form-control"
                            placeholder="Enter your full name" value="@Model.ApproverName" required />
                 </div>
 
-                <h3 class="checklist-title">Before we proceed to final print and installation, please complete the checklist below:</h3>
+                <h3 class="checklist-title">Before we proceed to final print and installation, please complete the checklist
+                    below:</h3>
 
                     <div class="checklist-item">
-                        <input type="checkbox" id="item1" name="LayoutAccuracyApproved" value="true"
-                        @(Model.Approval?.LayoutAccuracyApproved == true ? "checked" : "") />
-                        <label for="item1">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="item1" name="LayoutAccuracyApproved" value="true" class="approval-checkbox"
+                            @(Model.Approval?.LayoutAccuracyApproved == true ? "checked" : "") />
+                        </div>
+                        <label for="item1" class="checkbox-label">
                             <strong>1. Layout Accuracy</strong>
-                            Please confirm the building layout shown matches your current premises, including rooms, doors,
-                            walls.
+                            <span>Please confirm the building layout shown matches your current premises, including rooms, doors, walls.</span>
                         </label>
                     </div>
 
                     <div class="checklist-item">
-                        <input type="checkbox" id="item2" name="FireEquipmentLocationsApproved" value="true"
-                        @(Model.Approval?.FireEquipmentLocationsApproved == true ? "checked" : "") />
-                        <label for="item2">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="item2" name="FireEquipmentLocationsApproved" value="true" class="approval-checkbox"
+                            @(Model.Approval?.FireEquipmentLocationsApproved == true ? "checked" : "") />
+                        </div>
+                        <label for="item2" class="checkbox-label">
                             <strong>2. Fire Equipment Locations</strong>
-                            Please confirm all fire safety equipment is shown in the correct location, including:
+                            <span>Please confirm all fire safety equipment is shown in the correct location, including:</span>
                             <ul>
                                 <li>Fire extinguishers</li>
                                 <li>Hose reels</li>
@@ -87,20 +91,24 @@
                     </div>
 
                     <div class="checklist-item">
-                        <input type="checkbox" id="item3" name="YouAreHereApproved" value="true"
-                        @(Model.Approval?.YouAreHereApproved == true ? "checked" : "") />
-                        <label for="item3">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="item3" name="YouAreHereApproved" value="true" class="approval-checkbox"
+                            @(Model.Approval?.YouAreHereApproved == true ? "checked" : "") />
+                        </div>
+                        <label for="item3" class="checkbox-label">
                             <strong>3. "You Are Here" Position</strong>
-                            Please confirm the "You Are Here" marker is in the correct location.
+                            <span>Please confirm the "You Are Here" marker is in the correct location.</span>
                         </label>
                     </div>
 
                     <div class="checklist-item">
-                        <input type="checkbox" id="item4" name="DiagramMountingLocationApproved" value="true"
-                        @(Model.Approval?.DiagramMountingLocationApproved == true ? "checked" : "") />
-                        <label for="item4">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="item4" name="DiagramMountingLocationApproved" value="true" class="approval-checkbox"
+                            @(Model.Approval?.DiagramMountingLocationApproved == true ? "checked" : "") />
+                        </div>
+                        <label for="item4" class="checkbox-label">
                             <strong>4. Diagram Mounting Location</strong>
-                            Please confirm where the diagram will be installed:
+                            <span>Please confirm where the diagram will be installed:</span>
                             <ul>
                                 <li>Between 1200mm – 1500mm from floor level</li>
                                 <li>Clearly visible to occupants</li>
@@ -119,13 +127,34 @@
                     <button type="submit" class="btn btn-primary btn-approve">
                         ✓ Submit Approval
                     </button>
-            </form>
-        }
+                </form>
+            }
         else
-        {
-            <div class="alert alert-danger">
-                Invalid or expired approval link. Please contact your diagram provider.
-            </div>
-        }
+            {
+                <div class="alert alert-danger">
+                    Invalid or expired approval link. Please contact your diagram provider.
+                </div>
+            }
+        </div>
     </div>
-</div>
+
+<script>
+    document.querySelectorAll('.approval-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateProgress();
+        });
+    });
+
+    function updateProgress() {
+        const checkboxes = document.querySelectorAll('.approval-checkbox');
+        const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const percentage = (checked / 4) * 100;
+        
+        // Update progress bar with animation
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = percentage + '%';
+        
+        // Update count
+        document.getElementById('itemsCount').textContent = checked;
+    }
+</script>

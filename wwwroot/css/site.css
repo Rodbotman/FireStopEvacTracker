@@ -825,6 +825,7 @@ dd {
     max-width: 900px;
     margin: 40px auto;
     padding: 20px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .approval-card {
@@ -832,6 +833,7 @@ dd {
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     padding: 40px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .approval-header {
@@ -846,12 +848,14 @@ dd {
     font-weight: 700;
     margin: 0;
     font-size: 28px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .approval-header p {
     color: #666;
     margin: 10px 0 0 0;
     font-size: 14px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .job-details {
@@ -860,6 +864,7 @@ dd {
     border-radius: 8px;
     margin-bottom: 30px;
     border-left: 4px solid #ed1c24;
+    font-family: 'Roboto', sans-serif;
 }
 
 .job-details strong {
@@ -916,45 +921,65 @@ dd {
     border-radius: 8px;
     border-left: 5px solid #ed1c24;
     transition: background-color 0.2s ease;
+    gap: 20px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .checklist-item:hover {
     background-color: #efefef;
 }
 
-.checklist-item input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
-    margin-right: 15px;
-    margin-top: 3px;
-    cursor: pointer;
-    accent-color: #ed1c24;
+.checkbox-wrapper {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding-top: 8px;
 }
 
-.checklist-item label {
+.approval-checkbox {
+    width: 48px;
+    height: 48px;
+    cursor: pointer;
+    accent-color: #ed1c24;
+    flex-shrink: 0;
+}
+
+.checkbox-label {
     margin: 0;
     cursor: pointer;
     flex: 1;
     color: #333;
+    font-family: 'Roboto', sans-serif;
 }
 
-.checklist-item strong {
+.checkbox-label strong {
     display: block;
     color: #2b2b2b;
     margin-bottom: 8px;
     font-size: 16px;
+    font-family: 'Roboto', sans-serif;
 }
 
-.checklist-item ul {
+.checkbox-label span {
+    display: block;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.checkbox-label ul {
     margin: 10px 0 0 0;
     padding-left: 20px;
     font-size: 14px;
     color: #555;
+    font-family: 'Roboto', sans-serif;
 }
 
-.checklist-item ul li {
+.checkbox-label ul li {
     margin-bottom: 5px;
     line-height: 1.4;
+    font-family: 'Roboto', sans-serif;
 }
 
 .changes-section {
@@ -967,6 +992,7 @@ dd {
     margin-bottom: 10px;
     display: block;
     font-size: 15px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .changes-section textarea {
