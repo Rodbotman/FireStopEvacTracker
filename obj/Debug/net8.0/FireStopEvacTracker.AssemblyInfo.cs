@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FireStopEvacTracker")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12d299883a4d61a9cdb5605693b06a3ce1b05269")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a221a5889d054d243d0d03cedc19bc6b200eb38")]
 [assembly: System.Reflection.AssemblyProductAttribute("FireStopEvacTracker")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FireStopEvacTracker")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

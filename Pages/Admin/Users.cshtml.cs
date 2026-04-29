@@ -25,14 +25,14 @@ namespace FireStopEvacTracker.Pages.Admin
         public async Task<IActionResult> OnGetAsync()
         {
             // Check if user is authenticated
-            var userName = HttpContext.Session.GetString("UserName");
+            var userName = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(userName))
             {
                 return RedirectToPage("/Login");
             }
 
             // Check if user is admin
-            var userRole = HttpContext.Session.GetString("UserRole");
+            var userRole = HttpContext.Session.GetString("Role");
             if (userRole != "Admin")
             {
                 return RedirectToPage("/Index");
@@ -47,7 +47,7 @@ namespace FireStopEvacTracker.Pages.Admin
         public async Task<IActionResult> OnPostAsync(string action)
         {
             // Check if user is admin
-            var userRole = HttpContext.Session.GetString("UserRole");
+            var userRole = HttpContext.Session.GetString("Role");
             if (userRole != "Admin")
             {
                 return RedirectToPage("/Index");
@@ -92,7 +92,7 @@ namespace FireStopEvacTracker.Pages.Admin
             var isActiveStr = Request.Form["newIsActive"].ToString();
 
             // Validate input
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || 
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(role))
             {
                 Message = "All fields are required";
