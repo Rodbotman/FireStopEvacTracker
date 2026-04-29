@@ -19,6 +19,7 @@ public class DetailsModel : PageModel
     }
 
     public EvacJob? Job { get; set; }
+    public JobApproval? Approval { get; set; }
 
     [BindProperty]
     public UpdateJobInput UpdateInput { get; set; } = new();
@@ -43,10 +44,13 @@ public class DetailsModel : PageModel
 
         Job = await _db.EvacJobs
             .Include(j => j.JobNotes.OrderByDescending(n => n.CreatedAt))
+            .Include(j => j.Approvals)
             .FirstOrDefaultAsync(j => j.Id == id);
 
         if (Job is null)
             return NotFound();
+
+        Approval = await _db.JobApprovals.FirstOrDefaultAsync(a => a.JobId == id);
 
         UpdateInput.Status = Job.Status;
         UpdateInput.Notes = Job.Notes;
@@ -142,6 +146,32 @@ public class DetailsModel : PageModel
         NoteAddedBy = null;
 
         return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostGenerateShareCodeAsync(int id)
+    {
+        var job = await _db.EvacJobs.FindAsync(id);
+
+        if (job is null)
+            return NotFound();
+
+        // Generate a unique share code if one doesn't exist
+        if (string.IsNullOrEmpty(job.ShareCode))
+        {
+            job.ShareCode = GenerateShareCode();
+            await _db.SaveChangesAsync();
+        }
+
+        return RedirectToPage(new { id });
+    }
+
+    private string GenerateShareCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Range(0, 16)
+            .Select(_ => chars[random.Next(chars.Length)])
+            .ToArray());
     }
 
     public class UpdateJobInput

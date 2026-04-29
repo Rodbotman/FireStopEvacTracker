@@ -31,12 +31,18 @@ public class EvacJob
     [Display(Name = "Draft PDF Path")]
     public string? DraftPdfPath { get; set; }
 
+    // Share code for client approval link
+    public string? ShareCode { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? StatusUpdatedAt { get; set; }
 
     // Navigation property for notes
     public ICollection<JobNote> JobNotes { get; set; } = new List<JobNote>();
+
+    // Navigation property for approvals
+    public ICollection<JobApproval> Approvals { get; set; } = new List<JobApproval>();
 
     public bool HasPdf => !string.IsNullOrWhiteSpace(DraftPdfPath);
 

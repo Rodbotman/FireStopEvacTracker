@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
 
     public DbSet<EvacJob> EvacJobs => Set<EvacJob>();
     public DbSet<JobNote> JobNotes => Set<JobNote>();
+    public DbSet<JobApproval> JobApprovals => Set<JobApproval>();
     public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,10 +21,15 @@ public class AppDbContext : DbContext
             entity.Property(e => e.SiteAddress).HasMaxLength(300).IsRequired();
             entity.Property(e => e.JobName).HasMaxLength(250).IsRequired();
             entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ShareCode).HasMaxLength(50);
             entity.HasIndex(e => e.JobName).IsUnique();
             entity.HasMany(e => e.JobNotes)
                 .WithOne(n => n.EvacJob)
                 .HasForeignKey(n => n.EvacJobId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(e => e.Approvals)
+                .WithOne(a => a.Job)
+                .HasForeignKey(a => a.JobId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -31,6 +37,13 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Content).IsRequired();
+        });
+
+        modelBuilder.Entity<JobApproval>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ClientEmail).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.ClientName).HasMaxLength(200).IsRequired();
         });
 
         modelBuilder.Entity<User>(entity =>

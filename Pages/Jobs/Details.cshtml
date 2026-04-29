@@ -76,55 +76,105 @@
                 }
             </section>
 
-            <section class="details-card wide-card">
-                <h2>Update Job</h2>
-                <div class="update-job-layout">
-                    <form method="post" asp-page-handler="Update" class="update-form">
-                        <label>
-                            Status
-                            <select asp-for="UpdateInput.Status">
-                                @foreach (var status in JobStatus.All)
-                                {
-                                    <option value="@status">@status</option>
-                                }
-                            </select>
-                        </label>
-
-                        <label>
-                            Notes
-                            <textarea asp-for="UpdateInput.Notes"></textarea>
-                        </label>
-
-                        <button class="primary-button" type="submit">Save Changes</button>
+            <section class="details-card">
+                <h2>👥 Client Approval</h2>
+                
+                @if (string.IsNullOrEmpty(Model.Job.ShareCode))
+                {
+                    <p>Generate a shareable link to send to your client for approval.</p>
+                    <form method="post" asp-page-handler="GenerateShareCode" class="mini-form">
+                        <button type="submit" class="primary-button">🔗 Generate Share Link</button>
                     </form>
+                }
+                else
+                {
+                    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>Share Link:</strong><br />
+                        <code
+                            style="display: block; margin-top: 10px; padding: 10px; background: white; border-radius: 4px; word-break: break-all;">
+                            @Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")
+                        </code>
+                    </div>
 
-                    <form method="post" asp-page-handler="AddNote" class="notes-form">
-                        <label>
-                            Add Note
-                            <textarea asp-for="NewNote" placeholder="Add a timestamped note..."></textarea>
-                        </label>
-                        <label>
-                            Your Name
-                            <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" />
-                        </label>
-                        <button class="primary-button" type="submit">Add Note</button>
-                    </form>
-
-                    @if (Model.Job.JobNotes.Any())
+                    @if (Model.Approval != null)
                     {
-                        <aside class="notes-sidebar">
-                            <h3>Notes</h3>
-                            @foreach (var note in Model.Job.JobNotes)
-                            {
-                                <div class="note-item">
-                                    <p class="note-content">@note.Content</p>
-                                    <span class="note-author">by @note.AddedBy</span>
-                                    <span class="note-date">@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px;">
+                            <strong>Approval Status:</strong><br />
+                            <div style="margin-top: 10px;">
+                                @if (Model.Approval.IsApproved)
+                                {
+                                    <span style="color: #28a745; font-weight: 600;">✓ Approved on
+                                        @Model.Approval.ApprovedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                                    }
+                                else
+                                    {
+                                        <span>Pending (@(Model.Approval.ChecklistItemsCompleted)/4 items checked)</span>
+                                        <div class="progress" style="height: 20px; margin-top: 10px;">
+                                            <div class="progress-bar" style="width: @(Model.Approval.ChecklistItemsCompleted * 25)%"></div>
+                                        </div>
+                                    }
                                 </div>
-                            }
-                        </aside>
+                                @if (!string.IsNullOrEmpty(Model.Approval.ChangesRequired))
+                                {
+                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                        <strong>Changes Required:</strong><br />
+                                        @Model.Approval.ChangesRequired
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
-                </div>
-            </section>
-        </div>
-    }
+                </section>
+
+                <section class="details-card wide-card">
+                    <h2>Update Job</h2>
+                    <div class="update-job-layout">
+                        <form method="post" asp-page-handler="Update" class="update-form">
+                            <label>
+                                Status
+                                <select asp-for="UpdateInput.Status">
+                                    @foreach (var status in JobStatus.All)
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </select>
+                            </label>
+
+                            <label>
+                                Notes
+                                <textarea asp-for="UpdateInput.Notes"></textarea>
+                            </label>
+
+                            <button class="primary-button" type="submit">Save Changes</button>
+                        </form>
+
+                        <form method="post" asp-page-handler="AddNote" class="notes-form">
+                            <label>
+                                Add Note
+                                <textarea asp-for="NewNote" placeholder="Add a timestamped note..."></textarea>
+                            </label>
+                            <label>
+                                Your Name
+                                <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" />
+                            </label>
+                            <button class="primary-button" type="submit">Add Note</button>
+                        </form>
+
+                        @if (Model.Job.JobNotes.Any())
+                        {
+                            <aside class="notes-sidebar">
+                                <h3>Notes</h3>
+                                @foreach (var note in Model.Job.JobNotes)
+                                {
+                                    <div class="note-item">
+                                        <p class="note-content">@note.Content</p>
+                                        <span class="note-author">by @note.AddedBy</span>
+                                        <span class="note-date">@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                }
+                            </aside>
+                        }
+                    </div>
+                </section>
+            </div>
+        }

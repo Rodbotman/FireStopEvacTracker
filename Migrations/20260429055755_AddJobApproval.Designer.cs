@@ -3,6 +3,7 @@ using System;
 using FireStopEvacTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FireStopEvacTracker.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429055755_AddJobApproval")]
+    partial class AddJobApproval
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -83,9 +86,6 @@ namespace FireStopEvacTracker.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ApproverName")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ChangesRequired")

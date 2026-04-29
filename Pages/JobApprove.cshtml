@@ -1,0 +1,131 @@
+@page "{shareCode}"
+@model FireStopEvacTracker.Pages.JobApproveModel
+@{
+    ViewData["Title"] = "Approve Evacuation Diagram";
+}
+
+<div class="approval-page-container">
+    <div class="approval-card">
+        <div class="approval-header">
+            <h1>📋 Evacuation Diagram Approval</h1>
+            <p>Please review and approve your evacuation diagram before final installation</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.IsApproved)
+        {
+            <div class="alert alert-success">
+                <strong>✓ Approved!</strong> Your evacuation diagram has been approved and is ready for final print and
+                installation.
+            </div>
+        }
+        else if (Model.Job != null)
+        {
+            <div class="job-details">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Client:</strong> @Model.Job.ClientName<br />
+                        <strong>Site Address:</strong> @Model.Job.SiteAddress<br />
+                        <strong>Job Name:</strong> @Model.Job.JobName
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Approval Progress:</strong>
+                        <div class="progress" style="height: 20px; margin-top: 5px;">
+                            <div class="progress-bar" style="width: @(Model.Approval?.ChecklistItemsCompleted * 25)%"></div>
+                        </div>
+                        <small>@(Model.Approval?.ChecklistItemsCompleted ?? 0) of 4 items checked</small>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Job.HasPdf)
+            {
+                <div class="pdf-section">
+                    <p style="margin-bottom: 10px;">📄 View Draft Diagram:</p>
+                    <a href="@Model.Job.DraftPdfPath" target="_blank" class="pdf-link">View PDF</a>
+                </div>
+            }
+
+            <form method="post">
+                <div class="approver-info-section">
+                    <label for="approverName">Your Name *</label>
+                    <input type="text" id="approverName" name="ApproverName" class="form-control" 
+                           placeholder="Enter your full name" value="@Model.ApproverName" required />
+                </div>
+
+                <h3 class="checklist-title">Before we proceed to final print and installation, please complete the checklist below:</h3>
+
+                    <div class="checklist-item">
+                        <input type="checkbox" id="item1" name="LayoutAccuracyApproved" value="true"
+                        @(Model.Approval?.LayoutAccuracyApproved == true ? "checked" : "") />
+                        <label for="item1">
+                            <strong>1. Layout Accuracy</strong>
+                            Please confirm the building layout shown matches your current premises, including rooms, doors,
+                            walls.
+                        </label>
+                    </div>
+
+                    <div class="checklist-item">
+                        <input type="checkbox" id="item2" name="FireEquipmentLocationsApproved" value="true"
+                        @(Model.Approval?.FireEquipmentLocationsApproved == true ? "checked" : "") />
+                        <label for="item2">
+                            <strong>2. Fire Equipment Locations</strong>
+                            Please confirm all fire safety equipment is shown in the correct location, including:
+                            <ul>
+                                <li>Fire extinguishers</li>
+                                <li>Hose reels</li>
+                                <li>Fire blankets</li>
+                                <li>First aid kits</li>
+                                <li>Exit points</li>
+                                <li>Any other safety equipment</li>
+                            </ul>
+                        </label>
+                    </div>
+
+                    <div class="checklist-item">
+                        <input type="checkbox" id="item3" name="YouAreHereApproved" value="true"
+                        @(Model.Approval?.YouAreHereApproved == true ? "checked" : "") />
+                        <label for="item3">
+                            <strong>3. "You Are Here" Position</strong>
+                            Please confirm the "You Are Here" marker is in the correct location.
+                        </label>
+                    </div>
+
+                    <div class="checklist-item">
+                        <input type="checkbox" id="item4" name="DiagramMountingLocationApproved" value="true"
+                        @(Model.Approval?.DiagramMountingLocationApproved == true ? "checked" : "") />
+                        <label for="item4">
+                            <strong>4. Diagram Mounting Location</strong>
+                            Please confirm where the diagram will be installed:
+                            <ul>
+                                <li>Between 1200mm – 1500mm from floor level</li>
+                                <li>Clearly visible to occupants</li>
+                                <li>Not mounted on glass</li>
+                                <li>Suitable wall/surface for screw fixing</li>
+                            </ul>
+                        </label>
+                    </div>
+
+                    <div class="changes-section">
+                        <label for="changes">5. Changes Required (Optional)</label>
+                        <textarea id="changes" name="ChangesRequired" rows="4"
+                                  placeholder="If any corrections are needed, please describe them here...">@Model.Approval?.ChangesRequired</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-approve">
+                        ✓ Submit Approval
+                    </button>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-danger">
+                Invalid or expired approval link. Please contact your diagram provider.
+            </div>
+        }
+    </div>
+</div>

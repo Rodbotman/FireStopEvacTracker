@@ -26,6 +26,10 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cVXNlcnMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/xampp/htdocs/FireStopEvacTracker/Pages/JobApprove.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSm9iQXBwcm92ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/xampp/htdocs/FireStopEvacTracker/Pages/Jobs/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSm9ic1xDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
