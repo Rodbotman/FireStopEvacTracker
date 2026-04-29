@@ -4,6 +4,7 @@ using FireStopEvacTracker.Models;
 using FireStopEvacTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace FireStopEvacTracker.Pages.Jobs;
 
