@@ -167,7 +167,7 @@ public class DetailsModel : PageModel
         var userRole = HttpContext.Session.GetString("UserRole");
         if (userRole != "Admin")
         {
-            return Forbid();
+            return Unauthorized();
         }
 
         if (EditNoteId == null || string.IsNullOrWhiteSpace(EditNoteContent))
@@ -201,7 +201,7 @@ public class DetailsModel : PageModel
         var userRole = HttpContext.Session.GetString("UserRole");
         if (userRole != "Admin")
         {
-            return Forbid();
+            return Unauthorized();
         }
 
         var note = await _db.JobNotes.FindAsync(noteId);
@@ -253,7 +253,7 @@ public class DetailsModel : PageModel
         var userRole = HttpContext.Session.GetString("UserRole");
         if (userRole != "Admin")
         {
-            return Forbid();
+            return Unauthorized();
         }
 
         try
