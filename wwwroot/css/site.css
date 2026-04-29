@@ -423,6 +423,366 @@ dd {
     font-style: italic;
 }
 
+/* ==================== ADMIN PANEL STYLES ==================== */
+
+.admin-container {
+    max-width: 1200px;
+    margin: 28px auto;
+    padding: 0 20px;
+}
+
+.admin-header {
+    margin-bottom: 28px;
+}
+
+.admin-header h1 {
+    font-size: 32px;
+    margin: 0 0 8px 0;
+    color: #202020;
+}
+
+.admin-header .subtitle {
+    color: #666;
+    margin: 0;
+    font-size: 14px;
+}
+
+.admin-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.panel-header {
+    border-bottom: 2px solid #ed1c24;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #202020;
+}
+
+.admin-form {
+    display: grid;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #202020;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #ed1c24;
+    box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: flex-end;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    margin-left: 6px;
+    gap: 6px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #ed1c24;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #d41920;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(237, 28, 36, 0.2);
+}
+
+.btn-secondary {
+    background: #e9e9e9;
+    color: #202020;
+}
+
+.btn-secondary:hover {
+    background: #d9d9d9;
+}
+
+.btn-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #e67e22;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.users-table-responsive {
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.users-table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #ed1c24;
+}
+
+.users-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #202020;
+}
+
+.users-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.user-row:hover {
+    background: #f8f9fa;
+}
+
+.users-table .username {
+    font-weight: 600;
+    color: #202020;
+}
+
+.users-table .email {
+    color: #666;
+    font-size: 13px;
+}
+
+.users-table .date-small {
+    color: #999;
+    font-size: 13px;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.role-badge.role-admin {
+    background: #667eea;
+    color: white;
+}
+
+.role-badge.role-manager {
+    background: #f093fb;
+    color: white;
+}
+
+.role-badge.role-viewer {
+    background: #4ecdc4;
+    color: white;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.status-badge.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-action {
+    background: none;
+    border: none;
+    padding: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.btn-action:hover {
+    background: #f0f0f0;
+}
+
+.btn-action.edit-btn:hover {
+    background: #e3f2fd;
+}
+
+.btn-action.reset-btn:hover {
+    background: #fff3e0;
+}
+
+.btn-action.delete-btn:hover {
+    background: #ffebee;
+}
+
+.modal-header {
+    border-bottom: 1px solid #ed1c24;
+    background: #f8f9fa;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    color: #202020;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body .mb-3 {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #202020;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    border-color: #ed1c24;
+    box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.1);
+    outline: none;
+}
+
+.form-control:disabled {
+    background: #f0f0f0;
+    color: #999;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: none;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.alert .btn-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.alert .btn-close:hover {
+    opacity: 1;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 28px;
+    font-style: italic;
+}
+
 @media (max-width: 800px) {
     .topbar,
     .page-header,
@@ -444,5 +804,18 @@ dd {
 
     .pdf-viewer {
         min-height: 300px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .users-table {
+        font-size: 12px;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 8px;
     }
 }

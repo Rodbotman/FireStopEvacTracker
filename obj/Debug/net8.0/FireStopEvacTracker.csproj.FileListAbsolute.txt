@@ -125,3 +125,4 @@ C:\xampp\htdocs\FireStopEvacTracker\obj\Debug\net8.0\refint\FireStopEvacTracker.
 C:\xampp\htdocs\FireStopEvacTracker\obj\Debug\net8.0\FireStopEvacTracker.pdb
 C:\xampp\htdocs\FireStopEvacTracker\obj\Debug\net8.0\FireStopEvacTracker.genruntimeconfig.cache
 C:\xampp\htdocs\FireStopEvacTracker\obj\Debug\net8.0\ref\FireStopEvacTracker.dll
+C:\xampp\htdocs\FireStopEvacTracker\obj\Debug\net8.0\FireStopEvacTracker.sourcelink.json
