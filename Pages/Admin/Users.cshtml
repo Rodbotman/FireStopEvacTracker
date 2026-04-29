@@ -190,17 +190,22 @@
                                                     </select>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label class="form-check-label">
+                                                    <div class="form-check">
                                                         @if (user.IsActive)
                                                         {
-                                                            @("<input type=\"checkbox\" class=\"form-check-input\" name=\"editIsActive\" value=\"true\" checked>")
+                                                            <input type="checkbox" class="form-check-input"
+                                                                   id="editIsActive@(user.Id)" name="editIsActive" value="true"
+                                                                   checked>
                                                         }
                                                         else
                                                         {
-                                                            @("<input type=\"checkbox\" class=\"form-check-input\" name=\"editIsActive\" value=\"true\">")
+                                                            <input type="checkbox" class="form-check-input"
+                                                                   id="editIsActive@(user.Id)" name="editIsActive" value="true">
                                                         }
-                                                        Active
-                                                    </label>
+                                                        <label class="form-check-label" for="editIsActive@(user.Id)">
+                                                            Active
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
