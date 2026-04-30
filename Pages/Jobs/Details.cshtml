@@ -90,34 +90,35 @@
                 {
                     <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <strong>Share Link:</strong><br />
-                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; background: white; border-radius: 4px; padding: 10px;">
-                            <code id="shareLink" style="flex: 1; word-break: break-all; margin: 0; font-size: 14px;">
-                                @Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")
-                            </code>
-                            <button type="button" id="copyBtn" onclick="copyShareLink(event)" title="Copy to clipboard" style="background: #f0f0f0 !important; border: 1px solid #ddd !important; cursor: pointer; font-size: 20px; padding: 6px 8px; border-radius: 4px; flex-shrink: 0; transition: all 0.2s; display: inline-block !important; visibility: visible !important;">
+                        <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 10px;">
+                            <input type="text" id="shareLink" readonly style="flex: 1; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px;" value="@Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")" />
+                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; color: #333; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 18px; white-space: nowrap; flex-shrink: 0; min-width: 44px;">
                                 📋
                             </button>
                         </div>
                     </div>
 
                     <script>
-                        function copyShareLink(e) {
-                            e.preventDefault();
-                            const shareLink = document.getElementById('shareLink').innerText;
+                        function copyShareLink() {
+                            const shareLink = document.getElementById('shareLink').value;
                             const btn = document.getElementById('copyBtn');
+                            
                             navigator.clipboard.writeText(shareLink).then(() => {
                                 const originalText = btn.innerText;
                                 btn.innerText = '✓';
                                 btn.style.background = '#d4edda';
                                 btn.style.borderColor = '#28a745';
+                                btn.style.color = '#155724';
+                                
                                 setTimeout(() => {
                                     btn.innerText = originalText;
                                     btn.style.background = '#f0f0f0';
                                     btn.style.borderColor = '#ddd';
+                                    btn.style.color = '#333';
                                 }, 1500);
                             }).catch(err => {
                                 console.error('Copy failed:', err);
-                                alert('Failed to copy: ' + err);
+                                alert('Failed to copy to clipboard');
                             });
                         }
                     </script>
