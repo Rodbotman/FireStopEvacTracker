@@ -10,4 +10,5 @@ services:
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/firestop_evac_tracker.db
     volumes:
       - ./data:/app/data
+      - ./uploads:/app/wwwroot/uploads
     restart: unless-stopped
