@@ -992,14 +992,19 @@ dd {
 }
 
 .approval-checkbox {
-    width: 64px;
-    height: 64px;
+    width: 64px !important;
+    height: 64px !important;
     cursor: pointer;
     accent-color: #ed1c24;
     flex-shrink: 0;
     transition: all 0.2s ease;
     padding: 8px;
     box-sizing: border-box;
+    appearance: auto;
+    -webkit-appearance: checkbox;
+    -moz-appearance: checkbox;
+    display: inline-block !important;
+    vertical-align: middle;
 }
 
 .approval-checkbox:hover {
