@@ -964,8 +964,6 @@ dd {
     box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.1);
 }
 
-.checklist-title {
-
 .checklist-item {
     display: flex;
     align-items: flex-start;
