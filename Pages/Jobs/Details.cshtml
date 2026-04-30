@@ -90,11 +90,11 @@
                 {
                     <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <strong>Share Link:</strong><br />
-                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 10px; background: white; border-radius: 4px; padding: 10px;">
-                            <code id="shareLink" style="flex: 1; word-break: break-all; margin: 0;">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; background: white; border-radius: 4px; padding: 10px;">
+                            <code id="shareLink" style="flex: 1; word-break: break-all; margin: 0; font-size: 14px;">
                                 @Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")
                             </code>
-                            <button type="button" onclick="copyShareLink()" title="Copy to clipboard" style="background: none; border: none; cursor: pointer; font-size: 20px; padding: 0; flex-shrink: 0; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; cursor: pointer; font-size: 20px; padding: 6px 8px; border-radius: 4px; flex-shrink: 0; transition: all 0.2s;">
                                 📋
                             </button>
                         </div>
@@ -103,13 +103,16 @@
                     <script>
                         function copyShareLink() {
                             const shareLink = document.getElementById('shareLink').innerText;
+                            const btn = document.getElementById('copyBtn');
                             navigator.clipboard.writeText(shareLink).then(() => {
-                                const button = event.target;
-                                const originalText = button.innerText;
-                                button.innerText = '✓';
-                                button.style.fontSize = '20px';
+                                const originalText = btn.innerText;
+                                btn.innerText = '✓';
+                                btn.style.background = '#d4edda';
+                                btn.style.borderColor = '#28a745';
                                 setTimeout(() => {
-                                    button.innerText = originalText;
+                                    btn.innerText = originalText;
+                                    btn.style.background = '#f0f0f0';
+                                    btn.style.borderColor = '#ddd';
                                 }, 1500);
                             }).catch(err => {
                                 alert('Failed to copy: ' + err);
