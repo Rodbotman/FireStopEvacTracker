@@ -989,31 +989,51 @@ dd {
     display: flex;
     align-items: center;
     padding-top: 8px;
+    position: relative;
 }
 
 .approval-checkbox {
-    width: 64px !important;
-    height: 64px !important;
+    width: 64px;
+    height: 64px;
     cursor: pointer;
-    accent-color: #ed1c24;
-    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
     transition: all 0.2s ease;
-    padding: 8px;
-    box-sizing: border-box;
-    appearance: auto;
-    -webkit-appearance: checkbox;
-    -moz-appearance: checkbox;
-    display: inline-block !important;
-    vertical-align: middle;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .approval-checkbox:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 8px rgba(237, 28, 36, 0.5));
+    background: #e8e8e8;
+    border-color: #bbb;
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(237, 28, 36, 0.3);
 }
 
 .approval-checkbox:checked {
-    filter: drop-shadow(0 0 6px rgba(40, 167, 69, 0.7));
+    background: #d4edda;
+    border-color: #28a745;
+    box-shadow: 0 0 12px rgba(40, 167, 69, 0.5);
+}
+
+.approval-checkbox:checked::after {
+    content: '✓';
+    color: #28a745;
+    font-size: 40px;
+    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .checkbox-label {
