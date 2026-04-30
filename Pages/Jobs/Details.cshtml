@@ -100,26 +100,56 @@
 
                     <script>
                         function copyShareLink() {
-                            const shareLink = document.getElementById('shareLink').value;
+                            const shareLink = document.getElementById('shareLink');
                             const btn = document.getElementById('copyBtn');
+                            let success = false;
                             
-                            navigator.clipboard.writeText(shareLink).then(() => {
-                                const originalText = btn.innerText;
-                                btn.innerText = '✓';
-                                btn.style.background = '#d4edda';
-                                btn.style.borderColor = '#28a745';
-                                btn.style.color = '#155724';
+                            // Try modern Clipboard API first (HTTPS only)
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(shareLink.value).then(() => {
+                                    showSuccess(btn);
+                                }).catch(err => {
+                                    console.error('Clipboard API failed:', err);
+                                    fallbackCopy(shareLink, btn);
+                                });
+                            } else {
+                                // Fallback for HTTP connections
+                                fallbackCopy(shareLink, btn);
+                            }
+                            
+                            function fallbackCopy(element, button) {
+                                try {
+                                    // Select the text
+                                    element.select();
+                                    element.setSelectionRange(0, 99999); // For mobile
+                                    
+                                    // Copy using execCommand
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {
+                                        showSuccess(button);
+                                    } else {
+                                        alert('Please manually copy the link');
+                                    }
+                                } catch (err) {
+                                    console.error('Fallback copy failed:', err);
+                                    alert('Unable to copy. Please manually select and copy the link.');
+                                }
+                            }
+                            
+                            function showSuccess(button) {
+                                const originalText = button.innerText;
+                                button.innerText = '✓';
+                                button.style.background = '#d4edda';
+                                button.style.borderColor = '#28a745';
+                                button.style.color = '#155724';
                                 
                                 setTimeout(() => {
-                                    btn.innerText = originalText;
-                                    btn.style.background = '#f0f0f0';
-                                    btn.style.borderColor = '#ddd';
-                                    btn.style.color = '#333';
+                                    button.innerText = originalText;
+                                    button.style.background = '#f0f0f0';
+                                    button.style.borderColor = '#ddd';
+                                    button.style.color = '#333';
                                 }, 1500);
-                            }).catch(err => {
-                                console.error('Copy failed:', err);
-                                alert('Failed to copy to clipboard');
-                            });
+                            }
                         }
                     </script>
 
