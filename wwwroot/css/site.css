@@ -2,13 +2,21 @@
 
 * {
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif !important;
 }
 
 body {
     margin: 0;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Roboto', sans-serif !important;
     background: #f4f5f7;
     color: #202020;
+}
+
+/* Override Bootstrap fonts globally */
+html, body, div, p, span, h1, h2, h3, h4, h5, h6, 
+a, button, input, select, textarea, label, form, table, 
+ul, ol, li, thead, tbody, th, td {
+    font-family: 'Roboto', sans-serif !important;
 }
 
 .topbar {
@@ -1023,7 +1031,7 @@ dd {
     display: block;
     font-size: 15px;
     font-family: 'Roboto', sans-serif !important;
-}}
+}
 
 .changes-section textarea {
     width: 100%;
