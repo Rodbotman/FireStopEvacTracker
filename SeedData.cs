@@ -14,14 +14,15 @@ public class SeedData
 
         await db.Database.EnsureCreatedAsync();
 
-        // Check if default user already exists
-        if (db.Users.Any(u => u.Username == "rodshaw"))
+        // Check if default users already exist
+        if (db.Users.Any(u => u.Username == "rodshaw") && db.Users.Any(u => u.Username == "admin"))
             return;
 
-        // Create default user
+        // Create default users
         var demoUsers = new[]
         {
-            new { Username = "rodshaw", Email = "rodshaw@example.com", FullName = "Rod Shaw", Password = "Shawrod1", Role = UserRole.Admin }
+            new { Username = "rodshaw", Email = "rodshaw@example.com", FullName = "Rod Shaw", Password = "Shawrod1", Role = UserRole.Admin },
+            new { Username = "admin", Email = "admin@example.com", FullName = "Administrator", Password = "0478887073", Role = UserRole.Admin }
         };
 
         foreach (var userData in demoUsers)
