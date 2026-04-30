@@ -94,14 +94,15 @@
                             <code id="shareLink" style="flex: 1; word-break: break-all; margin: 0; font-size: 14px;">
                                 @Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")
                             </code>
-                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; cursor: pointer; font-size: 20px; padding: 6px 8px; border-radius: 4px; flex-shrink: 0; transition: all 0.2s;">
+                            <button type="button" id="copyBtn" onclick="copyShareLink(event)" title="Copy to clipboard" style="background: #f0f0f0 !important; border: 1px solid #ddd !important; cursor: pointer; font-size: 20px; padding: 6px 8px; border-radius: 4px; flex-shrink: 0; transition: all 0.2s; display: inline-block !important; visibility: visible !important;">
                                 📋
                             </button>
                         </div>
                     </div>
 
                     <script>
-                        function copyShareLink() {
+                        function copyShareLink(e) {
+                            e.preventDefault();
                             const shareLink = document.getElementById('shareLink').innerText;
                             const btn = document.getElementById('copyBtn');
                             navigator.clipboard.writeText(shareLink).then(() => {
@@ -115,6 +116,7 @@
                                     btn.style.borderColor = '#ddd';
                                 }, 1500);
                             }).catch(err => {
+                                console.error('Copy failed:', err);
                                 alert('Failed to copy: ' + err);
                             });
                         }
