@@ -16,6 +16,11 @@
             <div class="alert alert-danger">@Model.ErrorMessage</div>
         }
 
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">@Model.SuccessMessage</div>
+        }
+
         @if (Model.IsApproved)
         {
             <div class="alert alert-success">
@@ -118,16 +123,26 @@
                         </label>
                     </div>
 
-                    <div class="changes-section">
-                        <label for="changes">5. Changes Required (Optional)</label>
-                        <textarea id="changes" name="ChangesRequired" rows="4"
-                                  placeholder="If any corrections are needed, please describe them here...">@Model.Approval?.ChangesRequired</textarea>
-                    </div>
-
                     <button type="submit" class="btn btn-primary btn-approve">
                         ✓ Submit Approval
                     </button>
                 </form>
+
+                <div class="changes-section" style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #eee;">
+                    <h3 style="margin-bottom: 20px;">5. Changes Required (Optional)</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Submit any corrections or feedback about your evacuation diagram. These will be saved as notes and visible to the FireStop team.</p>
+                    <form method="post" asp-page-handler="Changes">
+                        <div style="display: none;">
+                            <input type="text" name="ApproverName" value="@Model.ApproverName" />
+                        </div>
+                        <textarea id="changes" name="ChangesRequired" rows="4"
+                                  placeholder="If any corrections are needed, please describe them here..."
+                                  style="margin-bottom: 15px;">@Model.Approval?.ChangesRequired</textarea>
+                        <button type="submit" class="btn btn-secondary" style="background: #667eea; color: white;">
+                            📝 Submit Changes as Note
+                        </button>
+                    </form>
+                </div>
             }
         else
             {

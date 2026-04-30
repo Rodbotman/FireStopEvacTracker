@@ -143,4 +143,51 @@ public class JobApproveModel : PageModel
 
         return Page();
     }
-}
+
+    public string? SuccessMessage { get; set; }
+
+    public async Task<IActionResult> OnPostChangesAsync(string shareCode)
+    {
+        if (string.IsNullOrEmpty(shareCode))
+        {
+            ErrorMessage = "Invalid approval link";
+            return Page();
+        }
+
+        // Find job by share code
+        Job = await _context.EvacJobs
+            .Include(j => j.Approvals)
+            .FirstOrDefaultAsync(j => j.ShareCode == shareCode);
+
+        if (Job == null)
+        {
+            ErrorMessage = "Job not found or approval link has expired";
+            return Page();
+        }
+
+        // Check if changes were provided
+        if (string.IsNullOrWhiteSpace(ChangesRequired))
+        {
+            ErrorMessage = "Please enter changes before submitting.";
+            // Reload existing data
+            Approval = await _context.JobApprovals.FirstOrDefaultAsync(a => a.JobId == Job.Id);
+            return Page();
+        }
+
+        // Create a note from the changes
+        var note = new JobNote
+        {
+            EvacJobId = Job.Id,
+            Content = $"Client Changes Required:\n\n{ChangesRequired}",
+            AddedBy = ApproverName ?? "Client Feedback"
+        };
+
+        _context.JobNotes.Add(note);
+        await _context.SaveChangesAsync();
+
+        // Get updated data to display
+        Approval = await _context.JobApprovals.FirstOrDefaultAsync(a => a.JobId == Job.Id);
+        SuccessMessage = "✓ Changes submitted successfully and added to job notes!";
+
+        return Page();
+    }
