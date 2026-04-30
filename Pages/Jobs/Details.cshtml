@@ -92,8 +92,12 @@
                         <strong>Share Link:</strong><br />
                         <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 10px;">
                             <input type="text" id="shareLink" readonly style="flex: 1; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px;" value="@Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")" />
-                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; color: #333; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 18px; white-space: nowrap; flex-shrink: 0; min-width: 44px;">
-                                📋
+                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; color: #333; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 18px; white-space: nowrap; flex-shrink: 0; min-width: 44px; display: flex; align-items: center; justify-content: center;">
+                                <svg id="copyIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                                <span id="copyText" style="display: none; margin-left: 6px;">✓</span>
                             </button>
                         </div>
                     </div>
@@ -102,22 +106,24 @@
                         function copyShareLink() {
                             const shareLink = document.getElementById('shareLink');
                             const btn = document.getElementById('copyBtn');
+                            const copyIcon = document.getElementById('copyIcon');
+                            const copyText = document.getElementById('copyText');
                             let success = false;
                             
                             // Try modern Clipboard API first (HTTPS only)
                             if (navigator.clipboard && window.isSecureContext) {
                                 navigator.clipboard.writeText(shareLink.value).then(() => {
-                                    showSuccess(btn);
+                                    showSuccess(btn, copyIcon, copyText);
                                 }).catch(err => {
                                     console.error('Clipboard API failed:', err);
-                                    fallbackCopy(shareLink, btn);
+                                    fallbackCopy(shareLink, btn, copyIcon, copyText);
                                 });
                             } else {
                                 // Fallback for HTTP connections
-                                fallbackCopy(shareLink, btn);
+                                fallbackCopy(shareLink, btn, copyIcon, copyText);
                             }
                             
-                            function fallbackCopy(element, button) {
+                            function fallbackCopy(element, button, icon, text) {
                                 try {
                                     // Select the text
                                     element.select();
@@ -126,7 +132,7 @@
                                     // Copy using execCommand
                                     const successful = document.execCommand('copy');
                                     if (successful) {
-                                        showSuccess(button);
+                                        showSuccess(button, icon, text);
                                     } else {
                                         alert('Please manually copy the link');
                                     }
@@ -136,15 +142,16 @@
                                 }
                             }
                             
-                            function showSuccess(button) {
-                                const originalText = button.innerText;
-                                button.innerText = '✓';
+                            function showSuccess(button, icon, text) {
+                                icon.style.display = 'none';
+                                text.style.display = 'inline';
                                 button.style.background = '#d4edda';
                                 button.style.borderColor = '#28a745';
                                 button.style.color = '#155724';
                                 
                                 setTimeout(() => {
-                                    button.innerText = originalText;
+                                    icon.style.display = 'block';
+                                    text.style.display = 'none';
                                     button.style.background = '#f0f0f0';
                                     button.style.borderColor = '#ddd';
                                     button.style.color = '#333';
