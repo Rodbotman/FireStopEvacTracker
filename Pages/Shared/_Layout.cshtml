@@ -21,11 +21,16 @@
                 <div class="brand-subtitle">Evacuation diagram job tracking</div>
             </div>
         </div>
-        <nav>
+        <nav class="nav-center">
             @if (Context.Session.GetInt32("UserId") != null)
             {
                 <a href="/Jobs">Jobs</a>
                 <a class="button-link" href="/Jobs/Create">New Job</a>
+            }
+        </nav>
+        <nav class="nav-right">
+            @if (Context.Session.GetInt32("UserId") != null)
+            {
                 @if (Context.Session.GetString("Role") == "Admin")
                 {
                     <a href="/Admin/Users" style="color: #f39c12; font-weight: 700;">⚙️ Admin</a>

@@ -26,12 +26,35 @@ ul, ol, li, thead, tbody, th, td {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 20px;
 }
 
 .brand {
     display: flex;
     gap: 14px;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.nav-center {
+    display: flex;
+    gap: 18px;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-right {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
 }
 
 .brand img {
@@ -52,19 +75,11 @@ ul, ol, li, thead, tbody, th, td {
     color: #ddd;
 }
 
-nav a {
-    color: white;
-    text-decoration: none;
-    margin-left: 18px;
-    font-weight: 700;
-}
-
 .user-info {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-left: 20px;
-    padding-left: 20px;
+    padding-left: 12px;
     border-left: 1px solid #555;
 }
 
