@@ -56,7 +56,17 @@
                         </object>
                     </div>
                 
-                    <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank">Open PDF</a>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank">Open PDF</a>
+                        
+                        @{
+                            string emailSubject = $"Evacuation Drawings Ready for Review - {Model.Job.JobName}";
+                            string emailBody = $"Hi {Model.Job.ClientName},%0A%0AThe attached evacuation diagram drawings are ready for your review.%0A%0APlease find the PDF attached.%0A%0AJob: {Model.Job.JobName}%0AClient: {Model.Job.ClientName}%0AAddress: {Model.Job.SiteAddress}%0A%0APlease let me know if you have any questions or require any modifications.%0A%0ABest regards,";
+                            string mailtoLink = $"mailto:?subject={Uri.EscapeDataString(emailSubject)}&body={emailBody}";
+                        }
+                        <a href="@mailtoLink" class="primary-button" title="Open in email client (attach PDF manually)">📧 Email Client</a>
+                        <a href="@Model.Job.DraftPdfPath" download="@Model.Job.DraftPdfFileName" class="secondary-button" title="Download PDF for email attachment">⬇️ Download PDF</a>
+                    </div>
                 }
             else
                 {
