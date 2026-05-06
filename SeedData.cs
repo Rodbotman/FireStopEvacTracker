@@ -17,6 +17,7 @@ public class SeedData
         // Create default users if they don't exist
         var demoUsers = new[]
         {
+            new { Username = "rod@surepro.com.au", Email = "rod@surepro.com.au", FullName = "Rod Shaw", Password = "Shawrod1", Role = UserRole.Admin },
             new { Username = "rodshaw", Email = "rodshaw@example.com", FullName = "Rod Shaw", Password = "Shawrod1", Role = UserRole.Admin },
             new { Username = "admin", Email = "admin@example.com", FullName = "Administrator", Password = "admin123", Role = UserRole.Admin }
         };
