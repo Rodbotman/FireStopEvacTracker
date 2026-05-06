@@ -95,3 +95,5 @@ public class SeedData
 
             await db.SaveChangesAsync();
         }
+    }
+}
