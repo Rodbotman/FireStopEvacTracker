@@ -18,7 +18,8 @@
         "approve": true,
         "matchCommandLine": true
       },
-      "dotnet ef": true
+      "dotnet ef": true,
+      "docker build": true
     },
   },
 }

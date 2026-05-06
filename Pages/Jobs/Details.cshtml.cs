@@ -317,9 +317,9 @@ public class DetailsModel : PageModel
             // Save the document using PdfStorageService (general file storage)
             var safeJobName = System.Text.RegularExpressions.Regex.Replace(job.JobName, @"[^a-zA-Z0-9_\-]+", "_");
             var safeFileName = System.Text.RegularExpressions.Regex.Replace(
-                System.IO.Path.GetFileNameWithoutExtension(RelatedDocument.FileName), 
+                System.IO.Path.GetFileNameWithoutExtension(RelatedDocument.FileName),
                 @"[^a-zA-Z0-9_\-]+", "_");
-            
+
             var folder = System.IO.Path.Combine(_pdfStorage.GetUploadsPath(), safeJobName);
             System.IO.Directory.CreateDirectory(folder);
 
