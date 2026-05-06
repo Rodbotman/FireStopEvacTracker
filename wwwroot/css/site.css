@@ -270,11 +270,14 @@ dl {
     display: grid;
     grid-template-columns: 200px 1fr;
     gap: 16px;
+    align-items: start;
 }
 
 dt {
     font-weight: 800;
     margin-top: 0;
+    max-width: 200px;
+    word-wrap: break-word;
 }
 
 dd {
