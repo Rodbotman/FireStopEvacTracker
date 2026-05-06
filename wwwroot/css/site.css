@@ -1552,3 +1552,22 @@ dd {
     padding: 12px;
     border-radius: 6px;
 }
+
+/* Heroicon styling */
+svg {
+    color: inherit;
+}
+
+button svg,
+a svg,
+h2 svg,
+.tab-btn svg {
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.primary-button svg,
+.secondary-button svg,
+.danger-button svg {
+    stroke-width: 2;
+}

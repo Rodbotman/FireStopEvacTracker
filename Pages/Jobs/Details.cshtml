@@ -55,7 +55,10 @@
         <!-- PDF and Documents Side by Side -->
         <div class="deliverables-grid">
             <section class="details-card">
-            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px;">📄 Draft PDF</h2>
+            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <svg class="icon-inline" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                Draft PDF
+            </h2>
 
             @if (Model.Job.HasPdf)
             {
@@ -64,15 +67,24 @@
                 </p>
                 
                 <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-                    <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank" style="padding: 8px 12px; font-size: 12px;">📖 View PDF</a>
+                    <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        View PDF
+                    </a>
                     
                     @{
                         string emailSubject = $"Evac Review - {Model.Job.ClientName} {Model.Job.JobName}";
                         string emailBody = $"Hi {Model.Job.ClientName},%0A%0AThe attached evacuation diagram drawings are ready for your review.%0A%0APlease find the PDF attached.%0A%0AJob: {Model.Job.JobName}%0AClient: {Model.Job.ClientName}%0AAddress: {Model.Job.SiteAddress}%0A%0APlease let me know if you have any questions or require any modifications.%0A%0ABest regards,";
                         string mailtoLink = $"mailto:?subject={Uri.EscapeDataString(emailSubject)}&body={emailBody}";
                     }
-                    <a href="@mailtoLink" class="primary-button" style="padding: 8px 12px; font-size: 12px;" title="Open in email client">📧 Email</a>
-                    <a href="@Model.Job.DraftPdfPath" download="@Model.Job.DraftPdfFileName" class="secondary-button" style="padding: 8px 12px; font-size: 12px;">⬇️ Download</a>
+                    <a href="@mailtoLink" class="primary-button" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;" title="Open in email client">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>
+                        Email
+                    </a>
+                    <a href="@Model.Job.DraftPdfPath" download="@Model.Job.DraftPdfFileName" class="secondary-button" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download
+                    </a>
                 </div>
             }
             else
@@ -91,7 +103,10 @@
         </section>
 
         <section class="details-card">
-            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px;">📎 Related Documents</h2>
+            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.13 17.9l5.77-5.77M6.21 17.82L17 7m-10 0l10 10"></path><path d="M9 13a3 3 0 1 1 4.24-4.24"></path></svg>
+                Related Documents
+            </h2>
 
             @if (Model.Job.JobDocuments.Any())
             {
@@ -126,13 +141,17 @@
                                     </td>
                                     <td>
                                         <div class="doc-actions-cell">
-                                            <a href="@doc.DocumentPath" download class="doc-action-btn">⬇️</a>
+                                            <a href="@doc.DocumentPath" download class="doc-action-btn" title="Download document">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                            </a>
                                             @{
                                                 var userRole = HttpContext.Session.GetString("Role");
                                                 if (userRole == "Admin")
                                                 {
                                                     <form method="post" asp-page-handler="DeleteDocument" asp-route-documentId="@doc.Id" style="display: inline; margin: 0;">
-                                                        <button type="submit" class="doc-action-btn delete" onclick="return confirm('Delete this document?');">🗑️</button>
+                                                        <button type="submit" class="doc-action-btn delete" onclick="return confirm('Delete this document?');" title="Delete document">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                    </button>
                                                     </form>
                                                 }
                                             }
@@ -170,7 +189,10 @@
         {
             <p style="font-size: 13px; margin: 0 0 10px 0; color: #666;">Generate a shareable link for client approval.</p>
             <form method="post" asp-page-handler="GenerateShareCode" style="display: inline;">
-                <button type="submit" class="primary-button" style="padding: 8px 16px; font-size: 12px;">🔗 Generate Share Link</button>
+                <button type="submit" class="primary-button" style="padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                Generate Link
+            </button>
             </form>
         }
         else
@@ -179,8 +201,9 @@
                 <strong>Share Link Generated</strong>
                 <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 8px;">
                     <input type="text" id="shareLink" readonly style="flex: 1; padding: 8px; background: white; border: 1px solid #999; border-radius: 4px; font-family: monospace; font-size: 11px;" value="@Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")" />
-                    <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: white; border: 1px solid #999; color: #333; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
-                        📋 Copy
+                    <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: white; border: 1px solid #999; color: #333; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Copy
                     </button>
                 </div>
             </div>
@@ -263,11 +286,20 @@
     <section class="details-card" style="padding: 0;">
         <div class="tabs-wrapper">
             <div class="tab-buttons" style="padding: 0 16px;">
-                <button class="tab-btn active" onclick="switchTab(event, 'update-status')">📋 Status & Notes</button>
-                <button class="tab-btn" onclick="switchTab(event, 'add-note')">📝 Add Note</button>
+                <button class="tab-btn active" onclick="switchTab(event, 'update-status')" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="3" x2="16" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                    Status & Notes
+                </button>
+                <button class="tab-btn" onclick="switchTab(event, 'add-note')" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    Add Note
+                </button>
                 @if (Model.Job.JobNotes.Any())
                 {
-                    <button class="tab-btn" onclick="switchTab(event, 'view-notes')">📖 History (@Model.Job.JobNotes.Count)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'view-notes')" style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                        History (@Model.Job.JobNotes.Count)
+                    </button>
                 }
             </div>
 
@@ -285,13 +317,19 @@
                             </select>
                         </div>
                         <div style="display: flex; align-items: flex-end;">
-                            <button class="primary-button" type="submit" style="width: 100%; padding: 8px; font-size: 13px;">💾 Save Status</button>
+                            <button class="primary-button" type="submit" style="width: 100%; padding: 8px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            Save Status
+                        </button>
                         </div>
                     </form>
                     <div style="margin-top: 16px;">
                         <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Job Notes</label>
                         <textarea asp-for="UpdateInput.Notes" style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: 'Roboto', sans-serif;"></textarea>
-                        <button class="primary-button" type="submit" onclick="document.querySelector('form[asp-page-handler=Update]').submit();" style="margin-top: 8px; padding: 8px 16px; font-size: 13px;">💾 Save Notes</button>
+                        <button class="primary-button" type="submit" onclick="document.querySelector('form[asp-page-handler=Update]').submit();" style="margin-top: 8px; padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            Save Notes
+                        </button>
                     </div>
                 </div>
 
@@ -306,7 +344,10 @@
                             <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Your Name</label>
                             <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" />
                         </div>
-                        <button class="primary-button" type="submit" style="padding: 8px 16px; font-size: 13px;">➕ Add Note</button>
+                        <button class="primary-button" type="submit" style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Note
+                        </button>
                     </form>
                 </div>
 
@@ -388,10 +429,16 @@
     @if (HttpContext.Session.GetString("Role") == "Admin")
     {
         <section class="details-card danger-section">
-            <h2 style="margin-top: 0; margin-bottom: 8px; font-size: 16px;">⚠️ Danger Zone</h2>
+            <h2 style="margin-top: 0; margin-bottom: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Danger Zone
+            </h2>
             <p style="margin: 0 0 10px 0; font-size: 13px; color: #c53030;"><strong>Warning:</strong> This action cannot be undone.</p>
             <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Job.Id" style="display: inline;" onsubmit="return confirm('Permanently delete this job and all associated data?');">
-                <button type="submit" class="danger-button" style="padding: 8px 16px; font-size: 12px;">🗑️ Delete Job</button>
+                <button type="submit" class="danger-button" style="padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    Delete Job
+                </button>
             </form>
         </section>
     }
