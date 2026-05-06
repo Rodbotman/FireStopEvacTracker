@@ -8,11 +8,13 @@ public class SeedData
 {
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
+        Console.WriteLine("[SEED] Starting seed initialization...");
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
 
         await db.Database.EnsureCreatedAsync();
+        Console.WriteLine("[SEED] Database ensured created");
 
         // Create default users if they don't exist
         var demoUsers = new[]
@@ -44,10 +46,13 @@ public class SeedData
         }
 
         await db.SaveChangesAsync();
+        Console.WriteLine("[SEED] Users seeded");
 
         // Create demo jobs if they don't exist
+        Console.WriteLine($"[SEED] Checking if jobs exist. Any jobs? {db.EvacJobs.Any()}");
         if (!db.EvacJobs.Any())
         {
+            Console.WriteLine("[SEED] Creating demo jobs...");
             var demoJobs = new[]
             {
                 new EvacJob
@@ -94,6 +99,11 @@ public class SeedData
             }
 
             await db.SaveChangesAsync();
+            Console.WriteLine("[SEED] Demo jobs created successfully");
+        }
+        else
+        {
+            Console.WriteLine("[SEED] Jobs already exist, skipping seed");
         }
     }
 }
