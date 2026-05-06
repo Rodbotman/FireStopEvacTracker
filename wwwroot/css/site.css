@@ -266,13 +266,20 @@ label {
     grid-column: 1 / -1;
 }
 
+dl {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+}
+
 dt {
     font-weight: 800;
-    margin-top: 12px;
+    margin-top: 0;
 }
 
 dd {
     margin-left: 0;
+    margin-top: 0;
     color: #444;
 }
 
