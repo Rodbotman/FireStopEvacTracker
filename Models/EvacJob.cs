@@ -44,6 +44,9 @@ public class EvacJob
     // Navigation property for approvals
     public ICollection<JobApproval> Approvals { get; set; } = new List<JobApproval>();
 
+    // Navigation property for related documents
+    public ICollection<JobDocument> JobDocuments { get; set; } = new List<JobDocument>();
+
     public bool HasPdf => !string.IsNullOrWhiteSpace(DraftPdfPath);
 
     public string GetShortJobName()

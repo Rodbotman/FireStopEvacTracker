@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\xampp\\htdocs\\FireStopEvacTracker\\FireStopEvacTracker.csproj": {}
+    "C:\\Users\\Rod\\OneDrive - SurePro Pty Ltd\\Rods Personal\\Coding\\Evac Tracker\\FireStopEvacTracker.csproj": {}
   },
   "projects": {
-    "C:\\xampp\\htdocs\\FireStopEvacTracker\\FireStopEvacTracker.csproj": {
+    "C:\\Users\\Rod\\OneDrive - SurePro Pty Ltd\\Rods Personal\\Coding\\Evac Tracker\\FireStopEvacTracker.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\xampp\\htdocs\\FireStopEvacTracker\\FireStopEvacTracker.csproj",
+        "projectUniqueName": "C:\\Users\\Rod\\OneDrive - SurePro Pty Ltd\\Rods Personal\\Coding\\Evac Tracker\\FireStopEvacTracker.csproj",
         "projectName": "FireStopEvacTracker",
-        "projectPath": "C:\\xampp\\htdocs\\FireStopEvacTracker\\FireStopEvacTracker.csproj",
+        "projectPath": "C:\\Users\\Rod\\OneDrive - SurePro Pty Ltd\\Rods Personal\\Coding\\Evac Tracker\\FireStopEvacTracker.csproj",
         "packagesPath": "C:\\Users\\Rod\\.nuget\\packages\\",
-        "outputPath": "C:\\xampp\\htdocs\\FireStopEvacTracker\\obj\\",
+        "outputPath": "C:\\Users\\Rod\\OneDrive - SurePro Pty Ltd\\Rods Personal\\Coding\\Evac Tracker\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Rod\\AppData\\Roaming\\NuGet\\NuGet.Config"

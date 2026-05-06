@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<EvacJob> EvacJobs => Set<EvacJob>();
     public DbSet<JobNote> JobNotes => Set<JobNote>();
     public DbSet<JobApproval> JobApprovals => Set<JobApproval>();
+    public DbSet<JobDocument> JobDocuments => Set<JobDocument>();
     public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,6 +32,10 @@ public class AppDbContext : DbContext
                 .WithOne(a => a.Job)
                 .HasForeignKey(a => a.JobId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(e => e.JobDocuments)
+                .WithOne(d => d.EvacJob)
+                .HasForeignKey(d => d.EvacJobId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<JobNote>(entity =>
@@ -44,6 +49,15 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ClientEmail).HasMaxLength(255).IsRequired();
             entity.Property(e => e.ClientName).HasMaxLength(200).IsRequired();
+        });
+
+        modelBuilder.Entity<JobDocument>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileName).HasMaxLength(300).IsRequired();
+            entity.Property(e => e.DocumentPath).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.DocumentType).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UploadedBy).HasMaxLength(200);
         });
 
         modelBuilder.Entity<User>(entity =>

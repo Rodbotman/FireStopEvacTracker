@@ -1,13 +1,24 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"chat.tools.terminal.autoApprove": {
-			"dotnet tool": true,
-			"dotnet-ef": true
-		}
-	}
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "chat.tools.terminal.autoApprove": {
+      "dotnet tool": true,
+      "dotnet-ef": true,
+      "git checkout": true,
+      "git add": true,
+      "git commit": true,
+      "git remote": true,
+      "git push": true,
+      "ssh": true,
+      "/^cd \"c:\\\\Users\\\\Rod\\\\OneDrive - SurePro Pty Ltd\\\\Rods Personal\\\\Coding\\\\Evac Tracker\" && bash deploy\\.sh$/": {
+        "approve": true,
+        "matchCommandLine": true
+      },
+      "dotnet ef": true
+    },
+  },
 }

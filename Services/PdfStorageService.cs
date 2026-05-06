@@ -11,6 +11,11 @@ public class PdfStorageService
         _environment = environment;
     }
 
+    public string GetUploadsPath()
+    {
+        return Path.Combine(_environment.WebRootPath, "uploads");
+    }
+
     public async Task<(string fileName, string relativePath)> SaveDraftPdfAsync(IFormFile pdfFile, string jobName)
     {
         if (pdfFile.Length == 0)

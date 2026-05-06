@@ -39,6 +39,15 @@ public class DetailsModel : PageModel
     [BindProperty]
     public IFormFile? NewDraftPdf { get; set; }
 
+    [BindProperty]
+    public IFormFile? RelatedDocument { get; set; }
+
+    [BindProperty]
+    public string? DocumentType { get; set; }
+
+    [BindProperty]
+    public string? DocumentUploadedBy { get; set; }
+
     public async Task<IActionResult> OnGetAsync(int id)
     {
         // Check if user is authenticated
@@ -50,6 +59,7 @@ public class DetailsModel : PageModel
 
         Job = await _db.EvacJobs
             .Include(j => j.JobNotes.OrderByDescending(n => n.CreatedAt))
+            .Include(j => j.JobDocuments.OrderByDescending(d => d.UploadedAt))
             .Include(j => j.Approvals)
             .FirstOrDefaultAsync(j => j.Id == id);
 
@@ -290,6 +300,97 @@ public class DetailsModel : PageModel
             System.Diagnostics.Debug.WriteLine($"Error deleting job: {ex.Message}");
             throw;
         }
+    }
+
+    public async Task<IActionResult> OnPostUploadDocumentAsync(int id)
+    {
+        var job = await _db.EvacJobs.FindAsync(id);
+
+        if (job is null)
+            return NotFound();
+
+        if (RelatedDocument is null || string.IsNullOrWhiteSpace(DocumentType))
+            return RedirectToPage(new { id });
+
+        try
+        {
+            // Save the document using PdfStorageService (general file storage)
+            var safeJobName = System.Text.RegularExpressions.Regex.Replace(job.JobName, @"[^a-zA-Z0-9_\-]+", "_");
+            var safeFileName = System.Text.RegularExpressions.Regex.Replace(
+                System.IO.Path.GetFileNameWithoutExtension(RelatedDocument.FileName), 
+                @"[^a-zA-Z0-9_\-]+", "_");
+            
+            var folder = System.IO.Path.Combine(_pdfStorage.GetUploadsPath(), safeJobName);
+            System.IO.Directory.CreateDirectory(folder);
+
+            var fileName = $"{safeJobName}_DOC_{DateTime.Now:yyyyMMdd_HHmmss}_{safeFileName}{System.IO.Path.GetExtension(RelatedDocument.FileName)}";
+            var fullPath = System.IO.Path.Combine(folder, fileName);
+
+            await using var stream = System.IO.File.Create(fullPath);
+            await RelatedDocument.CopyToAsync(stream);
+
+            var relativePath = $"/uploads/{safeJobName}/{fileName}";
+
+            // Create JobDocument record
+            var jobDoc = new JobDocument
+            {
+                EvacJobId = id,
+                FileName = RelatedDocument.FileName,
+                DocumentPath = relativePath,
+                DocumentType = DocumentType,
+                UploadedAt = DateTime.UtcNow,
+                UploadedBy = DocumentUploadedBy
+            };
+
+            _db.JobDocuments.Add(jobDoc);
+            job.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            RelatedDocument = null;
+            DocumentType = null;
+            DocumentUploadedBy = null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error uploading document: {ex.Message}");
+        }
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostDeleteDocumentAsync(int id, int documentId)
+    {
+        // Check if user is authenticated
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (userId == null)
+        {
+            return RedirectToPage("/Login");
+        }
+
+        // Check if user is admin
+        var userRole = HttpContext.Session.GetString("Role");
+        if (userRole != "Admin")
+        {
+            return Unauthorized();
+        }
+
+        var document = await _db.JobDocuments.FindAsync(documentId);
+        if (document is null)
+            return NotFound();
+
+        try
+        {
+            _pdfStorage.DeletePdfIfExists(document.DocumentPath);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting document file: {ex.Message}");
+        }
+
+        _db.JobDocuments.Remove(document);
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage(new { id });
     }
 
     public class UpdateJobInput

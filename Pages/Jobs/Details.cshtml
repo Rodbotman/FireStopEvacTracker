@@ -87,7 +87,84 @@
             </section>
 
             <section class="details-card">
-                <h2>👥 Client Approval</h2>
+                <h2>� Related Documents</h2>
+
+                @if (Model.Job.JobDocuments.Any())
+                {
+                    <div style="margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                                    <th style="padding: 10px; text-align: left; font-weight: 600;">Type</th>
+                                    <th style="padding: 10px; text-align: left; font-weight: 600;">File Name</th>
+                                    <th style="padding: 10px; text-align: left; font-weight: 600;">Uploaded</th>
+                                    <th style="padding: 10px; text-align: center; font-weight: 600;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in Model.Job.JobDocuments)
+                                {
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 10px;">
+                                            <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">@doc.DocumentType</span>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                            <a href="@doc.DocumentPath" target="_blank" title="@doc.FileName" style="color: #1976d2; text-decoration: none;">
+                                                @(doc.FileName.Length > 40 ? doc.FileName.Substring(0, 40) + "..." : doc.FileName)
+                                            </a>
+                                        </td>
+                                        <td style="padding: 10px; font-size: 14px; color: #666;">
+                                            @doc.UploadedAt.ToSydneyString()
+                                            @if (!string.IsNullOrEmpty(doc.UploadedBy))
+                                            {
+                                                <br /><span style="font-size: 12px; color: #999;">by @doc.UploadedBy</span>
+                                            }
+                                        </td>
+                                        <td style="padding: 10px; text-align: center;">
+                                            <a href="@doc.DocumentPath" download class="secondary-button" style="padding: 6px 10px; font-size: 12px; text-decoration: none;">⬇️</a>
+                                            @{
+                                                var userRole = HttpContext.Session.GetString("Role");
+                                                if (userRole == "Admin")
+                                                {
+                                                    <form method="post" asp-page-handler="DeleteDocument" asp-route-documentId="@doc.Id" style="display: inline-block;">
+                                                        <button type="submit" class="danger-button" style="padding: 6px 10px; font-size: 12px;" onclick="return confirm('Delete this document?');">🗑️</button>
+                                                    </form>
+                                                }
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p style="color: #999;">No related documents uploaded.</p>
+                }
+
+                <form method="post" enctype="multipart/form-data" asp-page-handler="UploadDocument" class="mini-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div>
+                            <label for="DocumentType" style="display: block; margin-bottom: 5px; font-weight: 600;">Document Type:</label>
+                            <input type="text" asp-for="DocumentType" placeholder="e.g., Invoice, Specification, Approval Form" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" />
+                        </div>
+                        <div>
+                            <label for="DocumentUploadedBy" style="display: block; margin-bottom: 5px; font-weight: 600;">Uploaded By (Optional):</label>
+                            <input type="text" asp-for="DocumentUploadedBy" placeholder="Your name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" />
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label for="RelatedDocument" style="display: block; margin-bottom: 5px; font-weight: 600;">Select File:</label>
+                        <input type="file" asp-for="RelatedDocument" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" />
+                        <small style="color: #666; display: block; margin-top: 5px;">Supports: PDF, Word, Excel, Images, and other documents</small>
+                    </div>
+                    <button type="submit" class="primary-button">📤 Upload Document</button>
+                </form>
+            </section>
+
+            <section class="details-card">
+                <h2>�👥 Client Approval</h2>
                 
                 @if (string.IsNullOrEmpty(Model.Job.ShareCode))
                 {
