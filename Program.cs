@@ -27,6 +27,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await dbContext.Database.MigrateAsync();
+        // Seed initial data
+        await SeedData.InitializeAsync(scope.ServiceProvider);
     }
     catch (Exception ex)
     {
