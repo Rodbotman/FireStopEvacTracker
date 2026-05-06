@@ -89,7 +89,9 @@ public class SeedData
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     StatusUpdatedAt = DateTime.UtcNow,
-                    Notes = "New job - awaiting initial survey."
+                    Notes = "New job - awaiting initial survey.",
+                    DraftPdfFileName = "STRA_unit_2_16_Pendara_Cres_diagrams.pdf",
+                    DraftPdfPath = "/uploads/20260506_COASTAL_WELLNESS_42_44_MURWILLUMBAH/T-36103_DRAFT_20260506_112532_STRA_unit_2_16_Pendara_Cres_diagrams.pdf"
                 }
             };
 
