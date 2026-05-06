@@ -32,8 +32,13 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        // Log migration errors but don't crash the app
-        Console.WriteLine($"Migration warning: {ex.Message}");
+        // Log migration/seeding errors but don't crash the app
+        Console.WriteLine($"Migration/Seeding Error: {ex.Message}");
+        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+        }
     }
 }
 
