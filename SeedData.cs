@@ -44,5 +44,54 @@ public class SeedData
         }
 
         await db.SaveChangesAsync();
-    }
-}
+
+        // Create demo jobs if they don't exist
+        if (!db.EvacJobs.Any())
+        {
+            var demoJobs = new[]
+            {
+                new EvacJob
+                {
+                    JobName = "T-36101",
+                    ClientName = "Life Medical",
+                    SiteAddress = "113 Stuart St, Mullumbimby NSW 2482",
+                    Status = "Complete",
+                    DateStarted = DateTime.Now.AddDays(-7),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    StatusUpdatedAt = DateTime.Now.AddDays(-1),
+                    Notes = "Completed successfully. Client approved."
+                },
+                new EvacJob
+                {
+                    JobName = "T-36102",
+                    ClientName = "Sydney Medical Centre",
+                    SiteAddress = "245 Elizabeth St, Sydney NSW 2000",
+                    Status = "Drafting",
+                    DateStarted = DateTime.Now.AddDays(-3),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    StatusUpdatedAt = DateTime.Now.AddDays(-2),
+                    Notes = "Currently in draft phase. Awaiting client review."
+                },
+                new EvacJob
+                {
+                    JobName = "T-36103",
+                    ClientName = "Coastal Wellness",
+                    SiteAddress = "42-44 Murwillumbah St, Murwillumbah NSW 2484",
+                    Status = "New",
+                    DateStarted = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    StatusUpdatedAt = DateTime.UtcNow,
+                    Notes = "New job - awaiting initial survey."
+                }
+            };
+
+            foreach (var job in demoJobs)
+            {
+                db.EvacJobs.Add(job);
+            }
+
+            await db.SaveChangesAsync();
+        }
