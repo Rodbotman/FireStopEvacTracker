@@ -262,6 +262,10 @@ label {
     gap: 18px;
 }
 
+.details-grid .details-card {
+    padding: 14px;
+}
+
 /* Force all sections after Draft PDF to stay in right column */
 .details-grid > .details-card:nth-child(3),
 .details-grid > .details-card:nth-child(5) {
@@ -275,7 +279,7 @@ label {
 dl {
     display: grid;
     grid-template-columns: min-content 1fr;
-    gap: 10px;
+    gap: 6px;
     align-items: start;
 }
 
