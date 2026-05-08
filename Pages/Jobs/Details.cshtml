@@ -49,8 +49,8 @@
                 <p><strong>@Model.Job.DraftPdfFileName</strong></p>
                 
                 <!-- PDF Preview -->
-                <div class="pdf-preview-container" id="pdfPreviewContainer">
-                    <canvas id="pdfCanvas" style="width: 100%; border: 1px solid #ddd; border-radius: 4px;"></canvas>
+                <div class="pdf-preview-container" id="pdfPreviewContainer" style="position: relative; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; padding: 10px; max-height: 600px; overflow-y: auto;">
+                    <div id="pdfPages"></div>
                     <div id="pdfLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 14px; background: white; padding: 20px; border-radius: 4px;">Loading PDF...</div>
                 </div>
                 
@@ -327,52 +327,67 @@
 
 <!-- PDF.js Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+@if (Model.Job.HasPdf)
+{
+    <script>
+        var pdfPath = '@Html.Raw(Model.Job.DraftPdfPath)';
+    </script>
+}
 <script>
-    // Set up PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    @if (Model.Job.HasPdf)
-    {
-        <text>
-        async function renderPdf() {
-            try {
-                const pdfPath = '@Html.Raw(Model.Job.DraftPdfPath)';
-                const pdf = await pdfjsLib.getDocument(pdfPath).promise;
-                const page = await pdf.getPage(1);
+    async function renderPdf() {
+        try {
+            if (!pdfPath) return;
+            
+            const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+            const pagesContainer = document.getElementById('pdfPages');
+            pagesContainer.innerHTML = '';
+            
+            /* Render all pages */
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
                 
-                const canvas = document.getElementById('pdfCanvas');
+                /* Create canvas for this page */
+                const canvas = document.createElement('canvas');
+                canvas.style.width = '100%';
+                canvas.style.marginBottom = '10px';
+                canvas.style.border = '1px solid #ddd';
+                canvas.style.borderRadius = '4px';
+                canvas.style.backgroundColor = 'white';
+                
                 const context = canvas.getContext('2d');
                 
-                // Set canvas size to fit page
-                const viewport = page.getViewport({ scale: 1.5 });
+                /* Set canvas size to fit page, 10% bigger scale: 1.65 */
+                const viewport = page.getViewport({ scale: 1.65 });
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 
-                // Render page
+                /* Render page */
                 await page.render({
                     canvasContext: context,
                     viewport: viewport
                 }).promise;
                 
-                // Hide loading message
-                const loading = document.getElementById('pdfLoading');
-                if (loading) loading.style.display = 'none';
-            } catch (error) {
-                console.error('Error rendering PDF:', error);
-                const loading = document.getElementById('pdfLoading');
-                if (loading) {
-                    loading.textContent = 'Error loading PDF. Use "Open PDF" button above.';
-                    loading.style.color = '#dc3545';
-                }
+                pagesContainer.appendChild(canvas);
+            }
+            
+            /* Hide loading message */
+            const loading = document.getElementById('pdfLoading');
+            if (loading) loading.style.display = 'none';
+        } catch (error) {
+            console.error('Error rendering PDF:', error);
+            const loading = document.getElementById('pdfLoading');
+            if (loading) {
+                loading.textContent = 'Error loading PDF. Use "Open PDF" button above.';
+                loading.style.color = '#dc3545';
             }
         }
-        
-        // Render when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', renderPdf);
-        } else {
-            renderPdf();
-        }
-        </text>
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderPdf);
+    } else {
+        renderPdf();
     }
 </script>

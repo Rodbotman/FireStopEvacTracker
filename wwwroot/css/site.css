@@ -258,7 +258,7 @@ label {
 
 .details-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 20% 1fr;
     gap: 18px;
 }
 
