@@ -15,441 +15,313 @@
     </div>
 
     <div class="details-grid">
-        <!-- Compact Job Overview Grid -->
-        <section class="details-card" style="padding: 16px;">
-            <div class="job-overview-grid">
-                <div class="overview-item">
-                    <span class="overview-item-label">Date Started</span>
-                    <span class="overview-item-value">@Model.Job.DateStarted.ToString("dd/MM/yyyy")</span>
-                </div>
-                <div class="overview-item">
-                    <span class="overview-item-label">Client</span>
-                    <span class="overview-item-value">@Model.Job.ClientName</span>
-                </div>
-                <div class="overview-item">
-                    <span class="overview-item-label">Status</span>
-                    <span class="overview-item-value">
-                        <span class="status-pill status-@Model.Job.Status.ToLower().Replace(" ", "-")">@Model.Job.Status</span>
-                    </span>
-                </div>
-                <div class="overview-item">
-                    <span class="overview-item-label">Location</span>
-                    <span class="overview-item-value" style="font-size: 12px;">@Model.Job.SiteAddress</span>
-                </div>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Model.Job.Notes))
-            {
-                <div style="background: #f9f9f9; padding: 10px; border-radius: 6px; border-left: 3px solid #ed1c24; margin-top: 8px; font-size: 13px;">
-                    <strong style="display: block; margin-bottom: 4px; color: #555;">Notes</strong>
-                    @Model.Job.Notes
-                </div>
-            }
-            @if (Model.Job.StatusUpdatedAt.HasValue)
-            {
-                <div style="text-align: right; margin-top: 8px; font-size: 11px; color: #999;">
-                    Updated: @Model.Job.StatusUpdatedAt.Value.ToSydneyString()
-                </div>
-            }
-        </section>
+        <section class="details-card">
+            <h2>Job Details</h2>
+            <dl>
+                <dt>Date Started</dt>
+                <dd>@Model.Job.DateStarted.ToString("dd/MM/yyyy")</dd>
 
-        <!-- PDF and Documents Side by Side -->
-        <div class="deliverables-grid">
-            <section class="details-card">
-            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <svg class="icon-inline" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                Draft PDF
-            </h2>
+                <dt>Client</dt>
+                <dd>@Model.Job.ClientName</dd>
 
-            @if (Model.Job.HasPdf)
-            {
-                <p style="margin: 0 0 10px 0; font-weight: 500; color: #333; font-size: 12px;">
-                    <strong>@Model.Job.DraftPdfFileName</strong>
-                </p>
-                
-                <!-- PDF Preview Container -->
-                <div style="border: 1px solid #ddd; border-radius: 6px; overflow: hidden; margin-bottom: 10px; background: #f9f9f9;">
-                    <div id="pdfViewer" style="width: 100%; height: 400px; position: relative;">
-                        <canvas id="pdfCanvas" style="width: 100%; display: block;"></canvas>
-                        <div id="pdfLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 14px;">Loading PDF...</div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-                    <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        View PDF
-                    </a>
-                    
-                    @{
-                        string emailSubject = $"Evac Review - {Model.Job.ClientName} {Model.Job.JobName}";
-                        string emailBody = $"Hi {Model.Job.ClientName},%0A%0AThe attached evacuation diagram drawings are ready for your review.%0A%0APlease find the PDF attached.%0A%0AJob: {Model.Job.JobName}%0AClient: {Model.Job.ClientName}%0AAddress: {Model.Job.SiteAddress}%0A%0APlease let me know if you have any questions or require any modifications.%0A%0ABest regards,";
-                        string mailtoLink = $"mailto:?subject={Uri.EscapeDataString(emailSubject)}&body={emailBody}";
+                <dt>Address</dt>
+                <dd>@Model.Job.SiteAddress</dd>
+
+                <dt>Status</dt>
+                <dd>
+                    <span class="status-pill status-@Model.Job.Status.ToLower().Replace(" ", "-")">@Model.Job.Status</span>
+                    @if (Model.Job.StatusUpdatedAt.HasValue)
+                    {
+                        <span class="status-timestamp">Updated: @Model.Job.StatusUpdatedAt.Value.ToSydneyString()</span>
                     }
-                    <a href="@mailtoLink" class="primary-button" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;" title="Open in email client">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>
-                        Email
-                    </a>
-                    <a href="@Model.Job.DraftPdfPath" download="@Model.Job.DraftPdfFileName" class="secondary-button" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Download
-                    </a>
-                </div>
-            }
-            else
-            {
-                <p style="color: #999; font-size: 13px; margin: 0 0 10px 0;">No draft PDF attached.</p>
-            }
+                </dd>
 
-            <form method="post" enctype="multipart/form-data" asp-page-handler="ReplacePdf" style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: flex-end;">
-                <input type="file" asp-for="NewDraftPdf" accept="application/pdf" style="padding: 6px; font-size: 12px;" />
-                <button type="submit" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">Attach PDF</button>
-                @if (Model.Job.HasPdf)
-                {
-                    <button type="button" class="danger-button" style="padding: 6px 12px; font-size: 12px;" onclick="if(confirm('Remove PDF?')) { document.querySelector('form[asp-page-handler=RemovePdf]').submit(); }">Remove</button>
-                }
-            </form>
+                <dt>Notes</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.Job.Notes) ? "-" : Model.Job.Notes)</dd>
+            </dl>
         </section>
 
         <section class="details-card">
-            <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.13 17.9l5.77-5.77M6.21 17.82L17 7m-10 0l10 10"></path><path d="M9 13a3 3 0 1 1 4.24-4.24"></path></svg>
-                Related Documents
-            </h2>
+            <h2>Draft PDF</h2>
 
-            @if (Model.Job.JobDocuments.Any())
+            @if (Model.Job.HasPdf)
             {
-                <div class="document-table-wrapper">
-                    <table class="document-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Type</th>
-                                <th>File</th>
-                                <th style="width: 140px;">Uploaded</th>
-                                <th style="width: 70px; text-align: center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var doc in Model.Job.JobDocuments)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="doc-type-badge">@doc.DocumentType</span>
-                                    </td>
-                                    <td>
-                                        <a href="@doc.DocumentPath" target="_blank" class="doc-file-link" title="@doc.FileName">
-                                            @(doc.FileName.Length > 30 ? doc.FileName.Substring(0, 30) + "..." : doc.FileName)
-                                        </a>
-                                    </td>
-                                    <td class="doc-meta">
-                                        @doc.UploadedAt.ToSydneyString()
-                                        @if (!string.IsNullOrEmpty(doc.UploadedBy))
-                                        {
-                                            <br /><span style="font-size: 10px;">by @doc.UploadedBy</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="doc-actions-cell">
-                                            <a href="@doc.DocumentPath" download class="doc-action-btn" title="Download document">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                            </a>
-                                            @{
-                                                var userRole = HttpContext.Session.GetString("Role");
-                                                if (userRole == "Admin")
-                                                {
-                                                    <form method="post" asp-page-handler="DeleteDocument" asp-route-documentId="@doc.Id" style="display: inline; margin: 0;">
-                                                        <button type="submit" class="doc-action-btn delete" onclick="return confirm('Delete this document?');" title="Delete document">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                                    </button>
-                                                    </form>
-                                                }
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <p style="color: #999; font-size: 13px; margin: 0 0 10px 0;">No documents uploaded.</p>
-            }
-
-            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadDocument" class="doc-upload-compact">
-                <div class="doc-upload-compact-row">
-                    <input type="text" asp-for="DocumentType" placeholder="Invoice, Spec, etc." />
-                    <input type="text" asp-for="DocumentUploadedBy" placeholder="Your name (optional)" />
-                    <input type="file" asp-for="RelatedDocument" style="padding: 6px; font-size: 11px;" />
-                    <button type="submit" style="margin: 0;">📤 Upload</button>
-                </div>
-            </form>
-        </section>
-    </div>
-
-    <!-- Client Approval Section -->
-    <section class="details-card">
-    <!-- Client Approval Section -->
-    <section class="details-card">
-        <h2 style="margin-top: 0; font-size: 16px; margin-bottom: 12px;">👥 Client Approval</h2>
+                <p><strong>@Model.Job.DraftPdfFileName</strong></p>
                 
-        @if (string.IsNullOrEmpty(Model.Job.ShareCode))
-        {
-            <p style="font-size: 13px; margin: 0 0 10px 0; color: #666;">Generate a shareable link for client approval.</p>
-            <form method="post" asp-page-handler="GenerateShareCode" style="display: inline;">
-                <button type="submit" class="primary-button" style="padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                Generate Link
-            </button>
-            </form>
-        }
-        else
-        {
-            <div class="approval-info">
-                <strong>Share Link Generated</strong>
-                <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 8px;">
-                    <input type="text" id="shareLink" readonly style="flex: 1; padding: 8px; background: white; border: 1px solid #999; border-radius: 4px; font-family: monospace; font-size: 11px;" value="@Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")" />
-                    <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: white; border: 1px solid #999; color: #333; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                        Copy
-                    </button>
+                <!-- PDF Preview -->
+                <div class="pdf-preview-container" id="pdfPreviewContainer">
+                    <canvas id="pdfCanvas" style="width: 100%; border: 1px solid #ddd; border-radius: 4px;"></canvas>
+                    <div id="pdfLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 14px; background: white; padding: 20px; border-radius: 4px;">Loading PDF...</div>
                 </div>
-            </div>
+                
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a class="primary-button" href="@Model.Job.DraftPdfPath" target="_blank" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            View PDF
+                        </a>
+                        
+                        @{
+                            string emailSubject = $"Evacuation Drawings Ready for Review - {Model.Job.JobName}";
+                            string emailBody = $"Hi {Model.Job.ClientName},%0A%0AThe attached evacuation diagram drawings are ready for your review.%0A%0APlease find the PDF attached.%0A%0AJob: {Model.Job.JobName}%0AClient: {Model.Job.ClientName}%0AAddress: {Model.Job.SiteAddress}%0A%0APlease let me know if you have any questions or require any modifications.%0A%0ABest regards,";
+                            string mailtoLink = $"mailto:?subject={Uri.EscapeDataString(emailSubject)}&body={emailBody}";
+                        }
+                        <a href="@mailtoLink" class="primary-button" title="Open in email client (attach PDF manually)" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>
+                            Email Client
+                        </a>
+                        <a href="@Model.Job.DraftPdfPath" download="@Model.Job.DraftPdfFileName" class="secondary-button" title="Download PDF for email attachment" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Download
+                        </a>
+                    </div>
+                }
+            else
+                {
+                    <p>No draft PDF attached.</p>
+                }
 
-            <script>
-                function copyShareLink() {
-                    const shareLink = document.getElementById('shareLink');
-                    const btn = document.getElementById('copyBtn');
-                    
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(shareLink.value).then(() => {
-                            showSuccess(btn);
-                        }).catch(err => {
-                            fallbackCopy(shareLink, btn);
-                        });
-                    } else {
-                        fallbackCopy(shareLink, btn);
-                    }
-                    
-                    function fallbackCopy(element, button) {
-                        try {
-                            element.select();
-                            element.setSelectionRange(0, 99999);
-                            const successful = document.execCommand('copy');
-                            if (successful) {
-                                showSuccess(button);
+                <form method="post" enctype="multipart/form-data" asp-page-handler="ReplacePdf" class="mini-form">
+                    <input type="file" asp-for="NewDraftPdf" accept="application/pdf" />
+                    <button type="submit">Attach / Replace PDF</button>
+                </form>
+
+                @if (Model.Job.HasPdf)
+                {
+                    <form method="post" asp-page-handler="RemovePdf" class="mini-form">
+                        <button type="submit" class="danger-button">Remove PDF</button>
+                    </form>
+                }
+            </section>
+
+            <section class="details-card">
+                <h2>👥 Client Approval</h2>
+                
+                @if (string.IsNullOrEmpty(Model.Job.ShareCode))
+                {
+                    <p>Generate a shareable link to send to your client for approval.</p>
+                    <form method="post" asp-page-handler="GenerateShareCode" class="mini-form">
+                        <button type="submit" class="primary-button" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            Generate Share Link
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>Share Link:</strong><br />
+                        <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 10px;">
+                            <input type="text" id="shareLink" readonly style="flex: 1; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px;" value="@Html.Raw($"{Request.Scheme}://{Request.Host}/JobApprove/{Model.Job.ShareCode}")" />
+                            <button type="button" id="copyBtn" onclick="copyShareLink()" title="Copy link to clipboard" style="background: #f0f0f0; border: 1px solid #ddd; color: #333; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 18px; white-space: nowrap; flex-shrink: 0; min-width: 44px; display: flex; align-items: center; justify-content: center;">
+                                <svg id="copyIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                                <span id="copyText" style="display: none; margin-left: 6px;">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <script>
+                        function copyShareLink() {
+                            const shareLink = document.getElementById('shareLink');
+                            const btn = document.getElementById('copyBtn');
+                            const copyIcon = document.getElementById('copyIcon');
+                            const copyText = document.getElementById('copyText');
+                            let success = false;
+                            
+                            // Try modern Clipboard API first (HTTPS only)
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(shareLink.value).then(() => {
+                                    showSuccess(btn, copyIcon, copyText);
+                                }).catch(err => {
+                                    console.error('Clipboard API failed:', err);
+                                    fallbackCopy(shareLink, btn, copyIcon, copyText);
+                                });
                             } else {
-                                alert('Please manually copy the link');
+                                // Fallback for HTTP connections
+                                fallbackCopy(shareLink, btn, copyIcon, copyText);
                             }
-                        } catch (err) {
-                            alert('Unable to copy. Please manually select and copy.');
+                            
+                            function fallbackCopy(element, button, icon, text) {
+                                try {
+                                    // Select the text
+                                    element.select();
+                                    element.setSelectionRange(0, 99999); // For mobile
+                                    
+                                    // Copy using execCommand
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {
+                                        showSuccess(button, icon, text);
+                                    } else {
+                                        alert('Please manually copy the link');
+                                    }
+                                } catch (err) {
+                                    console.error('Fallback copy failed:', err);
+                                    alert('Unable to copy. Please manually select and copy the link.');
+                                }
+                            }
+                            
+                            function showSuccess(button, icon, text) {
+                                icon.style.display = 'none';
+                                text.style.display = 'inline';
+                                button.style.background = '#d4edda';
+                                button.style.borderColor = '#28a745';
+                                button.style.color = '#155724';
+                                
+                                setTimeout(() => {
+                                    icon.style.display = 'block';
+                                    text.style.display = 'none';
+                                    button.style.background = '#f0f0f0';
+                                    button.style.borderColor = '#ddd';
+                                    button.style.color = '#333';
+                                }, 1500);
+                            }
+                        }
+                    </script>
+
+                    @if (Model.Approval != null)
+                    {
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px;">
+                            <strong>Approval Status:</strong><br />
+                            <div style="margin-top: 10px;">
+                                @if (Model.Approval.IsApproved)
+                                {
+                                    <span style="color: #28a745; font-weight: 600;">✓ Approved on
+                                        @Model.Approval.ApprovedAt?.ToSydneyString()</span>
+                                    }
+                                else
+                                    {
+                                        <span>Pending (@(Model.Approval.ChecklistItemsCompleted)/4 items checked)</span>
+                                        <div class="progress" style="height: 20px; margin-top: 10px;">
+                                            <div class="progress-bar" style="width: @(Model.Approval.ChecklistItemsCompleted * 25)%"></div>
+                                        </div>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.Approval.ChangesRequired))
+                                {
+                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                        <strong>Changes Required:</strong><br />
+                                        @Model.Approval.ChangesRequired
+                                    </div>
+                                }
+                            </div>
                         }
                     }
-                    
-                    function showSuccess(button) {
-                        const originalText = button.textContent;
-                        button.textContent = '✓ Copied!';
-                        button.style.background = '#d4edda';
-                        button.style.borderColor = '#28a745';
-                        button.style.color = '#155724';
-                        
-                        setTimeout(() => {
-                            button.textContent = originalText;
-                            button.style.background = 'white';
-                            button.style.borderColor = '#999';
-                            button.style.color = '#333';
-                        }, 1500);
-                    }
-                }
-            </script>
+                </section>
 
-            @if (Model.Approval != null)
-            {
-                <div style="background: linear-gradient(135deg, #f0fff4 0%, #e8f5e9 100%); padding: 10px; border-radius: 6px; border-left: 3px solid #28a745; margin-top: 10px; font-size: 12px;">
-                    <strong>Approval Status:</strong><br />
-                    @if (Model.Approval.IsApproved)
-                    {
-                        <span class="approval-status">✓ Approved @Model.Approval.ApprovedAt?.ToSydneyString()</span>
-                    }
-                    else
-                    {
-                        <span>Pending (@(Model.Approval.ChecklistItemsCompleted)/4 items checked)</span>
-                        <div style="background: white; height: 4px; border-radius: 2px; margin-top: 6px; overflow: hidden;">
-                            <div style="height: 100%; background: #28a745; width: @(Model.Approval.ChecklistItemsCompleted * 25)%;"></div>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(Model.Approval.ChangesRequired))
-                    {
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
-                            <strong>Changes Needed:</strong><br />
-                            <span style="color: #666;">@Model.Approval.ChangesRequired</span>
-                        </div>
-                    }
-                </div>
-            }
-        }
-    </section>
+                <section class="details-card wide-card">
+                    <h2>Update Job</h2>
+                    <div class="update-job-layout">
+                        <form method="post" asp-page-handler="Update" class="update-form">
+                            <label>
+                                Status
+                                <select asp-for="UpdateInput.Status">
+                                    @foreach (var status in JobStatus.All)
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </select>
+                            </label>
 
-    <!-- Update Job Section with Tabs -->
-    <section class="details-card" style="padding: 0;">
-        <div class="tabs-wrapper">
-            <div class="tab-buttons" style="padding: 0 16px;">
-                <button class="tab-btn active" onclick="switchTab(event, 'update-status')" style="display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="3" x2="16" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
-                    Status & Notes
-                </button>
-                <button class="tab-btn" onclick="switchTab(event, 'add-note')" style="display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    Add Note
-                </button>
-                @if (Model.Job.JobNotes.Any())
-                {
-                    <button class="tab-btn" onclick="switchTab(event, 'view-notes')" style="display: flex; align-items: center; gap: 6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                        History (@Model.Job.JobNotes.Count)
-                    </button>
-                }
-            </div>
+                            <label>
+                                Notes
+                                <textarea asp-for="UpdateInput.Notes"></textarea>
+                            </label>
 
-            <div class="tab-content-wrapper">
-                <!-- Tab 1: Update Status & Notes -->
-                <div id="update-status" class="tab-pane active">
-                    <form method="post" asp-page-handler="Update" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Status</label>
-                            <select asp-for="UpdateInput.Status" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
-                                @foreach (var status in JobStatus.All)
-                                {
-                                    <option value="@status">@status</option>
-                                }
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: flex-end;">
-                            <button class="primary-button" type="submit" style="width: 100%; padding: 8px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                            Save Status
-                        </button>
-                        </div>
-                    </form>
-                    <div style="margin-top: 16px;">
-                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Job Notes</label>
-                        <textarea asp-for="UpdateInput.Notes" style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: 'Roboto', sans-serif;"></textarea>
-                        <button class="primary-button" type="submit" onclick="document.querySelector('form[asp-page-handler=Update]').submit();" style="margin-top: 8px; padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                            Save Notes
-                        </button>
-                    </div>
-                </div>
+                            <button class="primary-button" type="submit">Save Changes</button>
+                        </form>
 
-                <!-- Tab 2: Add Note -->
-                <div id="add-note" class="tab-pane">
-                    <form method="post" asp-page-handler="AddNote" style="display: grid; gap: 12px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">New Note</label>
-                            <textarea asp-for="NewNote" placeholder="Add a timestamped note..." style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: 'Roboto', sans-serif;"></textarea>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Your Name</label>
-                            <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" />
-                        </div>
-                        <button class="primary-button" type="submit" style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            Add Note
-                        </button>
-                    </form>
-                </div>
+                        <form method="post" asp-page-handler="AddNote" class="notes-form">
+                            <label>
+                                Add Note
+                                <textarea asp-for="NewNote" placeholder="Add a timestamped note..."></textarea>
+                            </label>
+                            <label>
+                                Your Name
+                                <input type="text" asp-for="NoteAddedBy" placeholder="Enter your name" />
+                            </label>
+                            <button class="primary-button" type="submit">Add Note</button>
+                        </form>
 
-                <!-- Tab 3: View Notes History -->
-                @if (Model.Job.JobNotes.Any())
-                {
-                    <div id="view-notes" class="tab-pane">
-                        <div style="display: grid; gap: 10px;">
-                            @foreach (var note in Model.Job.JobNotes)
-                            {
-                                <div class="note-item">
-                                    <p class="note-content">@note.Content</p>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <span class="note-author">@note.AddedBy</span>
-                                            <span class="note-date">@note.CreatedAt.ToSydneyString()</span>
-                                        </div>
-                                        @if (HttpContext.Session.GetString("Role") == "Admin")
-                                        {
-                                            <div style="display: flex; gap: 6px;">
-                                                <button type="button" class="note-edit-btn" onclick="editNote(@note.Id, '@Html.Raw(note.Content.Replace("'", "&#39;"))')">Edit</button>
-                                                <form method="post" asp-page-handler="DeleteNote" style="display: inline; margin: 0;"
-                                                      onsubmit="return confirm('Delete this note?');">
-                                                    <input type="hidden" name="noteId" value="@note.Id" />
-                                                    <button type="submit" class="note-delete-btn">Delete</button>
-                                                </form>
-                                            </div>
-                                        }
+                        <div id="editNoteForm"
+                             style="display: none; background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #ed1c24;">
+                            <h4>Edit Note</h4>
+                            <form method="post" asp-page-handler="EditNote">
+                                <input type="hidden" id="editNoteId" name="EditNoteId" />
+                                <label>
+                                    Note Content
+                                    <textarea id="editNoteContent" name="EditNoteContent" required
+                                              style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Roboto', sans-serif;"></textarea>
+                                </label>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <button type="submit" class="primary-button" style="padding: 8px 16px; font-size: 14px;">Save
+                                        Changes</button>
+                                        <button type="button" onclick="cancelEditNote()" class="secondary-button"
+                                                style="padding: 8px 16px; font-size: 14px;">Cancel</button>
                                     </div>
-                                </div>
+                                </form>
+                            </div>
+
+                            <script>
+                                            function editNote(noteId, content) {
+                                                document.getElementById('editNoteId').value = noteId;
+                                                document.getElementById('editNoteContent').value = content;
+                                                document.getElementById('editNoteForm').style.display = 'block';
+                                                document.getElementById('editNoteContent').focus();
+                                            }
+
+                                            function cancelEditNote() {
+                                                document.getElementById('editNoteForm').style.display = 'none';
+                                                document.getElementById('editNoteId').value = '';
+                                                document.getElementById('editNoteContent').value = '';
+                                            }
+                            </script>
+
+                            @if (Model.Job.JobNotes.Any())
+                            {
+                                <aside class="notes-sidebar">
+                                    <h3>Notes</h3>
+                                    @foreach (var note in Model.Job.JobNotes)
+                                    {
+                                        <div class="note-item">
+                                            <p class="note-content">@note.Content</p>
+                                            <span class="note-author">by @note.AddedBy</span>
+                                            <span class="note-date">@note.CreatedAt.ToSydneyString()</span>
+                                            @if (HttpContext.Session.GetString("Role") == "Admin")
+                                            {
+                                                <div class="note-actions" style="margin-top: 8px; display: flex; gap: 8px;">
+                                                    <button type="button" class="note-edit-btn"
+                                                            onclick="editNote(@note.Id, '@Html.Raw(note.Content.Replace("'", "&#39;"))')">Edit</button>
+                                                    <form method="post" asp-page-handler="DeleteNote" style="display: inline; margin: 0;"
+                                                          onsubmit="return confirm('Delete this note?');">
+                                                        <input type="hidden" name="noteId" value="@note.Id" />
+                                                        <button type="submit" class="note-delete-btn">Delete</button>
+                                                    </form>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </aside>
                             }
                         </div>
-                    </div>
-                }
+                    </section>
 
-                <div id="editNoteForm" style="display: none; background: linear-gradient(to right, #fff3f0, #ffebee); padding: 12px; border-radius: 6px; border-left: 3px solid #ed1c24; margin-top: 12px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Edit Note</h4>
-                    <form method="post" asp-page-handler="EditNote">
-                        <input type="hidden" id="editNoteId" name="EditNoteId" />
-                        <textarea id="editNoteContent" name="EditNoteContent" required style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Roboto', sans-serif; font-size: 13px;"></textarea>
-                        <div style="display: flex; gap: 8px; margin-top: 8px;">
-                            <button type="submit" class="primary-button" style="padding: 6px 12px; font-size: 12px;">Save</button>
-                            <button type="button" onclick="cancelEditNote()" class="secondary-button" style="padding: 6px 12px; font-size: 12px;">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <script>
-                    function switchTab(event, tabId) {
-                        event.preventDefault();
-                        
-                        // Hide all tabs
-                        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-                        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                        
-                        // Show selected tab
-                        document.getElementById(tabId).classList.add('active');
-                        event.target.classList.add('active');
-                    }
-                    
-                    function editNote(noteId, content) {
-                        document.getElementById('editNoteId').value = noteId;
-                        document.getElementById('editNoteContent').value = content;
-                        document.getElementById('editNoteForm').style.display = 'block';
-                        document.getElementById('editNoteContent').focus();
-                    }
-
-                    function cancelEditNote() {
-                        document.getElementById('editNoteForm').style.display = 'none';
-                        document.getElementById('editNoteId').value = '';
-                        document.getElementById('editNoteContent').value = '';
-                    }
-                </script>
-            </div>
-        </div>
-    </section>
-
-    <!-- Danger Zone -->
-    @if (HttpContext.Session.GetString("Role") == "Admin")
-    {
-        <section class="details-card danger-section">
-            <h2 style="margin-top: 0; margin-bottom: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                Danger Zone
-            </h2>
-            <p style="margin: 0 0 10px 0; font-size: 13px; color: #c53030;"><strong>Warning:</strong> This action cannot be undone.</p>
-            <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Job.Id" style="display: inline;" onsubmit="return confirm('Permanently delete this job and all associated data?');">
-                <button type="submit" class="danger-button" style="padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    Delete Job
-                </button>
-            </form>
-        </section>
-    }
+                    @if (HttpContext.Session.GetString("Role") == "Admin")
+                    {
+                        <section class="details-card">
+                            <h2>Danger Zone</h2>
+                            <p style="color: #dc3545; margin-bottom: 15px;"><strong>Warning:</strong> Deleting a job will permanently remove
+                                it and all associated approvals and notes. This action cannot be undone.</p>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Job.Id" class="mini-form"
+                                      onsubmit="return confirm('Are you sure you want to delete this job? This action cannot be undone.');">
+                                    <button type="submit" class="danger-button" style="display: flex; align-items: center; gap: 6px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        Delete Job
+                                    </button>
+                                </form>
+                            </section>
+                        }
                     </div>
                 }
 
@@ -472,7 +344,7 @@
                 const context = canvas.getContext('2d');
                 
                 // Set canvas size to fit page
-                const viewport = page.getViewport({ scale: 2 });
+                const viewport = page.getViewport({ scale: 1.5 });
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 
@@ -487,14 +359,10 @@
                 if (loading) loading.style.display = 'none';
             } catch (error) {
                 console.error('Error rendering PDF:', error);
-                const canvas = document.getElementById('pdfCanvas');
-                if (canvas) {
-                    canvas.style.display = 'none';
-                }
                 const loading = document.getElementById('pdfLoading');
                 if (loading) {
-                    loading.textContent = 'Error loading PDF. Use "View PDF" button to open in new tab.';
-                    loading.style.color = '#c53030';
+                    loading.textContent = 'Error loading PDF. Use "Open PDF" button above.';
+                    loading.style.color = '#dc3545';
                 }
             }
         }
