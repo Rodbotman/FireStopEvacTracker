@@ -262,6 +262,12 @@ label {
     gap: 18px;
 }
 
+/* Force all sections after Draft PDF to stay in right column */
+.details-grid > .details-card:nth-child(3),
+.details-grid > .details-card:nth-child(5) {
+    grid-column: 2;
+}
+
 .wide-card {
     grid-column: 1 / -1;
 }
