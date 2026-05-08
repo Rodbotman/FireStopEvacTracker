@@ -274,15 +274,15 @@ label {
 
 dl {
     display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 16px;
+    grid-template-columns: 90px 1fr;
+    gap: 10px;
     align-items: start;
 }
 
 dt {
     font-weight: 800;
     margin-top: 0;
-    max-width: 120px;
+    max-width: 90px;
     word-wrap: break-word;
 }
 
