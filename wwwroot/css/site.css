@@ -274,7 +274,7 @@ label {
 
 dl {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 120px 1fr;
     gap: 16px;
     align-items: start;
 }
@@ -282,7 +282,7 @@ dl {
 dt {
     font-weight: 800;
     margin-top: 0;
-    max-width: 200px;
+    max-width: 120px;
     word-wrap: break-word;
 }
 
