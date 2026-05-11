@@ -57,7 +57,9 @@ public class IndexModel : PageModel
         return Page();
     }
 
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> OnPostToggleBilledAsync(int id)
+    {
     {
         var job = await _db.EvacJobs.FindAsync(id);
 
