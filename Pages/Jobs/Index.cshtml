@@ -70,12 +70,22 @@
                 @if (Model.IsAdmin)
                 {
                     <td>
-                        <input type="number" class="billed-amount-input" 
-                               data-job-id="@job.Id" 
-                               value="@job.BilledAmount" 
-                               min="0" step="0.01" 
-                               placeholder="$0.00" 
-                               title="Enter billing amount for this job" />
+                        <div class="billing-amount-cell" data-job-id="@job.Id" data-amount="@job.BilledAmount">
+                            <span class="billing-display">$@job.BilledAmount.ToString("F2")</span>
+                            <button class="edit-icon" title="Edit billing amount" aria-label="Edit billing amount">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                            <input type="number" class="billed-amount-input" 
+                                   data-job-id="@job.Id" 
+                                   value="@job.BilledAmount" 
+                                   min="0" step="0.01" 
+                                   placeholder="$0.00" 
+                                   style="display: none;" 
+                                   title="Enter billing amount for this job" />
+                        </div>
                     </td>
                 }
                 <td><a class="small-button" href="/Jobs/Details/@job.Id">Open</a></td>
@@ -135,12 +145,31 @@ document.querySelectorAll('.billed-toggle').forEach(button => {
 @if (Model.IsAdmin)
 {
     <text>
+// Handle billing amount edit icon clicks
+document.querySelectorAll('.edit-icon').forEach(button => {
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const cell = button.closest('.billing-amount-cell');
+        const display = cell.querySelector('.billing-display');
+        const input = cell.querySelector('.billed-amount-input');
+        
+        // Switch to edit mode
+        display.style.display = 'none';
+        button.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.focus();
+        input.select();
+    });
+});
+
+// Handle billing amount input save and cancel
 document.querySelectorAll('.billed-amount-input').forEach(input => {
-    let debounceTimer;
-    input.addEventListener('change', async (e) => {
-        clearTimeout(debounceTimer);
+    async function saveAmount() {
         const jobId = input.dataset.jobId;
         const amount = parseFloat(input.value) || 0;
+        const cell = input.closest('.billing-amount-cell');
+        const display = cell.querySelector('.billing-display');
+        const editBtn = cell.querySelector('.edit-icon');
 
         try {
             const response = await fetch(`/api/jobs/update-billed-amount/${jobId}`, {
@@ -152,21 +181,46 @@ document.querySelectorAll('.billed-amount-input').forEach(input => {
             });
             
             if (response.ok) {
+                const result = await response.json();
+                // Update display with new amount
+                display.textContent = '$' + result.billedAmount.toFixed(2);
+                cell.dataset.amount = result.billedAmount;
                 updateBillingTally();
+                
+                // Switch back to display mode
+                input.style.display = 'none';
+                display.style.display = 'inline';
+                editBtn.style.display = 'inline-block';
             } else {
                 const error = await response.json();
                 alert(error.error || 'Error updating billing amount');
-                location.reload();
+                input.value = cell.dataset.amount;
             }
         } catch (error) {
             console.error('Error:', error);
             alert('Error updating billing amount');
+            input.value = cell.dataset.amount;
         }
-    });
+    }
 
-    input.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(updateBillingTally, 300);
+    function cancelEdit() {
+        const cell = input.closest('.billing-amount-cell');
+        const display = cell.querySelector('.billing-display');
+        const editBtn = cell.querySelector('.edit-icon');
+        
+        input.value = cell.dataset.amount;
+        input.style.display = 'none';
+        display.style.display = 'inline';
+        editBtn.style.display = 'inline-block';
+    }
+
+    input.addEventListener('blur', saveAmount);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveAmount();
+        } else if (e.key === 'Escape') {
+            cancelEdit();
+        }
     });
 });
 
