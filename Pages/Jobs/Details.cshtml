@@ -211,6 +211,76 @@
                 </section>
 
                 <section class="details-card wide-card">
+                    <h2>📎 Job Documents</h2>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Upload and manage additional files related to this job (invoices, specs, forms, etc.)</p>
+
+                    @if (Model.Job.JobDocuments.Any())
+                    {
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="font-size: 16px; margin-bottom: 10px; color: #333;">Uploaded Documents</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+                                @foreach (var doc in Model.Job.JobDocuments)
+                                {
+                                    <div style="border: 1px solid #ddd; border-radius: 6px; padding: 12px; background: #f9f9f9; display: flex; flex-direction: column; justify-content: space-between;">
+                                        <div>
+                                            <p style="font-weight: 600; margin: 0 0 8px 0; word-break: break-word; font-size: 14px;">@doc.FileName</p>
+                                            <span style="display: inline-block; background: #e8f4f8; color: #0066cc; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-bottom: 8px;">@doc.DocumentType</span>
+                                            <p style="margin: 8px 0; font-size: 12px; color: #666;">
+                                                <strong>Uploaded:</strong> @doc.UploadedAt.ToSydneyString()
+                                                @if (!string.IsNullOrEmpty(doc.UploadedBy))
+                                                {
+                                                    <br /><strong>By:</strong> @doc.UploadedBy
+                                                }
+                                            </p>
+                                        </div>
+                                        <div style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                            <a href="@doc.DocumentPath" target="_blank" class="primary-button" style="flex: 1; text-align: center; text-decoration: none; font-size: 13px; padding: 6px 8px;">View</a>
+                                            @if (HttpContext.Session.GetString("Role") == "Admin")
+                                            {
+                                                <form method="post" asp-page-handler="DeleteDocument" asp-route-documentId="@doc.Id" style="flex: 1; margin: 0;">
+                                                    <button type="submit" class="danger-button" style="width: 100%; font-size: 13px; padding: 6px 8px;" onclick="return confirm('Delete this document?');">Delete</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (HttpContext.Session.GetString("Role") == "Admin")
+                    {
+                        <form method="post" asp-page-handler="UploadDocument" enctype="multipart/form-data" style="background: #f0f7ff; padding: 15px; border-radius: 8px; border: 1px solid #d0e8ff;">
+                            <h3 style="font-size: 16px; margin-top: 0; margin-bottom: 15px; color: #0066cc;">Upload New Document</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">Select File</label>
+                                    <input type="file" asp-for="RelatedDocument" style="display: block; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">Document Type</label>
+                                    <select asp-for="DocumentType" style="display: block; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="">Select a type...</option>
+                                        <option value="Invoice">Invoice</option>
+                                        <option value="Specification">Specification</option>
+                                        <option value="Approval Form">Approval Form</option>
+                                        <option value="Quote">Quote</option>
+                                        <option value="Contract">Contract</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px;">Your Name (optional)</label>
+                            <input type="text" asp-for="DocumentUploadedBy" placeholder="Leave blank to use current user" style="display: block; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;" />
+                            <button type="submit" class="primary-button" style="display: flex; align-items: center; gap: 6px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                Upload Document
+                            </button>
+                        </form>
+                    }
+                </section>
+
+                <section class="details-card wide-card">
                     <h2>Update Job</h2>
                     <div class="update-job-layout">
                         <form method="post" asp-page-handler="Update" class="update-form">
