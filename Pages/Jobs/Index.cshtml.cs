@@ -84,3 +84,4 @@ public class IndexModel : PageModel
 
         return new JsonResult(new { isBilled = job.IsBilled });
     }
+}
