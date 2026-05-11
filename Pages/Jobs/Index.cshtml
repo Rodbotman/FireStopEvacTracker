@@ -76,12 +76,12 @@ document.querySelectorAll('.billed-toggle').forEach(button => {
         const jobId = button.dataset.jobId;
         
         try {
+            const formData = new FormData();
+            formData.append('id', jobId);
+            
             const response = await fetch(`?handler=ToggleBilled`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: jobId })
+                body: formData
             });
             
             if (response.ok) {
