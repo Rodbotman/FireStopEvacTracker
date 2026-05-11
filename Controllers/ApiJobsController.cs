@@ -65,8 +65,20 @@ public class JobsController : ControllerBase
         if (job is null)
             return NotFound();
 
+        var oldAmount = job.BilledAmount;
         job.BilledAmount = request.Amount;
         job.UpdatedAt = DateTime.UtcNow;
+
+        // Add a note recording the billing amount change
+        var note = new JobNote
+        {
+            EvacJobId = id,
+            Content = $"Billing amount updated to ${request.Amount:F2}",
+            AddedBy = _httpContextAccessor.HttpContext?.Session.GetString("FullName") ?? "System",
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.JobNotes.Add(note);
+
         await _db.SaveChangesAsync();
 
         return Ok(new { billedAmount = job.BilledAmount });
