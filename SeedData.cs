@@ -26,8 +26,8 @@ public class SeedData
 
         foreach (var userData in demoUsers)
         {
-            // Only add if the user doesn't exist
-            if (db.Users.Any(u => u.Username == userData.Username))
+            // Only add if the user doesn't exist (check both username and email)
+            if (db.Users.Any(u => u.Username == userData.Username || u.Email == userData.Email))
                 continue;
 
             var user = new User
