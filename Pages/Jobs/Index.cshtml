@@ -24,8 +24,6 @@
     <button type="submit">Search</button>
 </form>
 
-@Html.AntiForgeryToken()
-
 <table class="jobs-table">
     <thead>
         <tr>
@@ -78,18 +76,8 @@ document.querySelectorAll('.billed-toggle').forEach(button => {
         const jobId = button.dataset.jobId;
         
         try {
-            const formData = new FormData();
-            formData.append('id', jobId);
-            
-            // Add antiforgery token
-            const token = document.querySelector('input[name="__RequestVerificationToken"]');
-            if (token) {
-                formData.append('__RequestVerificationToken', token.value);
-            }
-            
-            const response = await fetch(`?handler=ToggleBilled`, {
-                method: 'POST',
-                body: formData
+            const response = await fetch(`/api/jobs/toggle-billed/${jobId}`, {
+                method: 'POST'
             });
             
             if (response.ok) {
