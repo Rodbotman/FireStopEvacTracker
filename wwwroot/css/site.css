@@ -169,6 +169,30 @@ button {
     background: #6f1d1b;
 }
 
+.billed-toggle {
+    background: #c0c0c0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 11px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+}
+
+.billed-toggle:hover {
+    background: #a8a8a8;
+}
+
+.billed-toggle.billed-active {
+    background: #22c55e;
+}
+
+.billed-toggle.billed-active:hover {
+    background: #16a34a;
+}
+
 .filter-card,
 .form-card,
 .details-card {

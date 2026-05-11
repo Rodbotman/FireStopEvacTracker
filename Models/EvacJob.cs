@@ -47,6 +47,8 @@ public class EvacJob
     // Navigation property for related documents
     public ICollection<JobDocument> JobDocuments { get; set; } = new List<JobDocument>();
 
+    public bool IsBilled { get; set; } = false;
+
     public bool HasPdf => !string.IsNullOrWhiteSpace(DraftPdfPath);
 
     public string GetShortJobName()

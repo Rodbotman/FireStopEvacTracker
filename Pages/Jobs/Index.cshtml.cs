@@ -3,6 +3,7 @@ using FireStopEvacTracker.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace FireStopEvacTracker.Pages.Jobs;
 
@@ -55,4 +56,31 @@ public class IndexModel : PageModel
 
         return Page();
     }
-}
+
+    public async Task<IActionResult> OnPostToggleBilledAsync(int id)
+    {
+        var job = await _db.EvacJobs.FindAsync(id);
+
+        if (job is null)
+            return NotFound();
+
+        job.IsBilled = !job.IsBilled;
+
+        // If marking as billed, add a note
+        if (job.IsBilled)
+        {
+            var note = new JobNote
+            {
+                EvacJobId = id,
+                Content = "billed to Firestop this week",
+                AddedBy = HttpContext.Session.GetString("FullName") ?? "System",
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.JobNotes.Add(note);
+        }
+
+        job.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return new JsonResult(new { isBilled = job.IsBilled });
+    }

@@ -33,6 +33,7 @@
             <th>Address</th>
             <th>Status</th>
             <th>PDF</th>
+            <th>Billed</th>
             <th></th>
         </tr>
     </thead>
@@ -55,8 +56,45 @@
                         <span class="no">No</span>
                     }
                 </td>
+                <td>
+                    <button class="billed-toggle @(job.IsBilled ? "billed-active" : "")" 
+                            data-job-id="@job.Id" 
+                            title="@(job.IsBilled ? "Unbilled" : "Mark as billed to Firestop this week")">
+                        $
+                    </button>
+                </td>
                 <td><a class="small-button" href="/Jobs/Details/@job.Id">Open</a></td>
             </tr>
         }
     </tbody>
 </table>
+
+<script>
+document.querySelectorAll('.billed-toggle').forEach(button => {
+    button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const jobId = button.dataset.jobId;
+        
+        try {
+            const response = await fetch(`?handler=ToggleBilled&id=${jobId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                button.classList.toggle('billed-active', result.isBilled);
+                button.title = result.isBilled ? 'Unbilled' : 'Mark as billed to Firestop this week';
+            } else {
+                alert('Error updating billed status');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error updating billed status');
+        }
+    });
+});
+</script>
