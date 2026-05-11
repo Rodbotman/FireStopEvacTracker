@@ -49,6 +49,10 @@ public class EvacJob
 
     public bool IsBilled { get; set; } = false;
 
+    [Display(Name = "Billed Amount")]
+    [DataType(DataType.Currency)]
+    public decimal BilledAmount { get; set; } = 0;
+
     public bool HasPdf => !string.IsNullOrWhiteSpace(DraftPdfPath);
 
     public string GetShortJobName()

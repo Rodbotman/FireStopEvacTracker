@@ -1,5 +1,6 @@
 using FireStopEvacTracker.Data;
 using FireStopEvacTracker.Models;
+using FireStopEvacTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +12,13 @@ public class JobsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly AuthService _authService;
 
-    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor)
+    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor, AuthService authService)
     {
         _db = db;
         _httpContextAccessor = httpContextAccessor;
+        _authService = authService;
     }
 
     [HttpPost("toggle-billed/{id}")]
@@ -46,4 +49,31 @@ public class JobsController : ControllerBase
 
         return Ok(new { isBilled = job.IsBilled });
     }
+
+    [HttpPost("update-billed-amount/{id}")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UpdateBilledAmount(int id, [FromBody] UpdateBilledAmountRequest request)
+    {
+        // Check if user is authorized (admin only)
+        if (!await _authService.IsUserAuthorizedAsync(_httpContextAccessor.HttpContext!, UserRole.Admin))
+            return Unauthorized(new { error = "You do not have permission to update billing amounts" });
+
+        if (request?.Amount < 0)
+            return BadRequest(new { error = "Billed amount cannot be negative" });
+
+        var job = await _db.EvacJobs.FindAsync(id);
+        if (job is null)
+            return NotFound();
+
+        job.BilledAmount = request.Amount;
+        job.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { billedAmount = job.BilledAmount });
+    }
+}
+
+public class UpdateBilledAmountRequest
+{
+    public decimal Amount { get; set; }
 }

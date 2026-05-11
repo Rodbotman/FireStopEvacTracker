@@ -1,5 +1,6 @@
 using FireStopEvacTracker.Data;
 using FireStopEvacTracker.Models;
+using FireStopEvacTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace FireStopEvacTracker.Pages.Jobs;
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _db;
+    private readonly AuthService _authService;
 
-    public IndexModel(AppDbContext db)
+    public IndexModel(AppDbContext db, AuthService authService)
     {
         _db = db;
+        _authService = authService;
     }
 
     public List<EvacJob> Jobs { get; set; } = [];
@@ -24,6 +27,8 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Status { get; set; }
 
+    public bool IsAdmin { get; set; } = false;
+
     public async Task<IActionResult> OnGetAsync()
     {
         // Check if user is authenticated
@@ -32,6 +37,10 @@ public class IndexModel : PageModel
         {
             return RedirectToPage("/Login");
         }
+
+        // Check if user is admin
+        var user = _authService.GetCurrentUser(HttpContext);
+        IsAdmin = user?.Role == UserRole.Admin;
 
         var query = _db.EvacJobs.AsQueryable();
 
