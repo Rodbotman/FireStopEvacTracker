@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# ASP.NET user secrets / local config
+appsettings.Development.json
+
+# Uploaded files (runtime data)
+wwwroot/uploads/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
