@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<JobNameService>();
 builder.Services.AddScoped<PdfStorageService>();
+builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();

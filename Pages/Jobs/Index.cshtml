@@ -9,7 +9,17 @@
         <h1>Evacuation Diagram Jobs</h1>
         <p>Track client jobs, draft PDFs, and review status.</p>
     </div>
-    <a class="primary-button" href="/Jobs/Create">+ New Job</a>
+    <div style="display: flex; gap: 10px;">
+        <a class="primary-button" href="/Jobs/Create">+ New Job</a>
+        <a class="secondary-button" href="/api/jobs/generate-status-report" style="display: flex; align-items: center; gap: 6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Generate Report PDF
+        </a>
+    </div>
 </div>
 
 <form method="get" class="filter-card">
@@ -61,11 +71,18 @@
                     }
                 </td>
                 <td>
-                    <button class="billed-toggle @(job.IsBilled ? "billed-active" : "")" 
-                            data-job-id="@job.Id" 
-                            title="@(job.IsBilled ? "Unbilled" : "Mark as billed to Firestop this week")">
-                        $
-                    </button>
+                    @if (Model.IsAdmin)
+                    {
+                        <button class="billed-toggle @(job.IsBilled ? "billed-active" : "")" 
+                                data-job-id="@job.Id" 
+                                title="@(job.IsBilled ? "Unbilled" : "Mark as billed to Firestop this week")">
+                            $
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="@(job.IsBilled ? "billed-active" : "")" style="color: #ccc;">-</span>
+                    }
                 </td>
                 @if (Model.IsAdmin)
                 {
