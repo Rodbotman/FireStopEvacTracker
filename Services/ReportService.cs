@@ -27,11 +27,18 @@ public class ReportService
 
             // Fetch all jobs with their notes
             var jobs = await _db.EvacJobs
-                .Include(j => j.JobNotes.OrderByDescending(n => n.CreatedAt))
+                .Include(j => j.JobNotes)
                 .Where(j => j.Status != JobStatus.Complete || j.DateStarted >= fourWeeksAgo)
                 .OrderByDescending(j => j.DateStarted)
                 .ThenByDescending(j => j.Id)
                 .ToListAsync();
+
+            foreach (var job in jobs)
+            {
+                job.JobNotes = job.JobNotes
+                    .OrderByDescending(n => n.CreatedAt)
+                    .ToList();
+            }
 
             // Create PDF
             using var stream = new MemoryStream();
