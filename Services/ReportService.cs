@@ -226,13 +226,13 @@ public class ReportService
     {
         return status switch
         {
-            "New" => new DeviceRgb(200, 220, 255), // Light blue
-            "Drafting" => new DeviceRgb(255, 240, 200), // Light orange
-            "Sent to Office" => new DeviceRgb(255, 250, 200), // Light yellow
-            "Sent to Customer" => new DeviceRgb(255, 230, 230), // Light red
-            "Changes Needed" => new DeviceRgb(255, 200, 200), // Red
-            "Approved" => new DeviceRgb(200, 255, 200), // Light green
-            "Complete" => new DeviceRgb(150, 220, 150), // Green
+            "New" => new DeviceRgb(244, 67, 54), // Red (#f44336)
+            "Drafting" => new DeviceRgb(255, 152, 0), // Orange (#ff9800)
+            "Sent to Office" => new DeviceRgb(255, 193, 7), // Amber (#ffc107)
+            "Sent to Customer" => new DeviceRgb(255, 235, 59), // Light Yellow (#ffeb3b)
+            "Changes Needed" => new DeviceRgb(255, 87, 34), // Deep Orange (#ff5722)
+            "Approved" => new DeviceRgb(139, 195, 74), // Light Green (#8bc34a)
+            "Complete" => new DeviceRgb(156, 39, 176), // Purple (#9c27b0)
             _ => new DeviceRgb(230, 230, 230) // Gray
         };
     }
