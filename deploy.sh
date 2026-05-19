@@ -17,6 +17,21 @@ fi
 read -p "Enter Droplet IP or domain: " SERVER_ADDRESS
 read -p "Enter your Git repository URL (leave blank to skip clone): " REPO_URL
 
+# Backup database before deployment
+echo ""
+echo "🔐 Creating database backup before deployment..."
+if [ -f "./backup-db.sh" ]; then
+    bash ./backup-db.sh
+    echo ""
+else
+    echo "⚠️  backup-db.sh not found. Skipping backup."
+    read -p "Continue without backup? (y/n): " CONTINUE
+    if [ "$CONTINUE" != "y" ]; then
+        exit 1
+    fi
+    echo ""
+fi
+
 # Connect to server
 if [ ! -z "$REPO_URL" ]; then
     echo "📥 Cloning repository to server..."

@@ -133,14 +133,26 @@ public class ReportService
     private Cell CreateStatusCell(string status)
     {
         var statusColor = GetStatusColor(status);
+        var textColor = GetStatusTextColor(status);
         return new Cell().Add(new Paragraph(status)
             .SetFontSize(9)
             .SetBold()
-            .SetFontColor(new DeviceRgb(0, 0, 0))
+            .SetFontColor(textColor)
             .SetTextAlignment(TextAlignment.CENTER))
             .SetBackgroundColor(statusColor)
             .SetPadding(6)
             .SetBorder(new SolidBorder(new DeviceRgb(211, 211, 211), 0.5f));
+    }
+
+    private Color GetStatusTextColor(string status)
+    {
+        // Match CSS: dark text only on the light Amber/Yellow pills; white elsewhere.
+        return status switch
+        {
+            "Sent to Office" => new DeviceRgb(51, 51, 51),
+            "Sent to Customer" => new DeviceRgb(51, 51, 51),
+            _ => new DeviceRgb(255, 255, 255)
+        };
     }
 
     private void AddJobSection(Document document, EvacJob job)

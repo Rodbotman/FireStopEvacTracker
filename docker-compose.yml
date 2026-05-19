@@ -11,4 +11,5 @@ services:
     volumes:
       - ./data:/app/data
       - ./uploads:/app/wwwroot/uploads
+      - ./dataprotection:/root/.aspnet/DataProtection-Keys
     restart: unless-stopped
