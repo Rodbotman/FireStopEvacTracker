@@ -30,9 +30,14 @@ public class ReportService
             var jobs = await _db.EvacJobs
                 .Include(j => j.JobNotes)
                 .Where(j => j.Status != JobStatus.Complete || j.DateStarted >= fourWeeksAgo)
-                .OrderByDescending(j => j.DateStarted)
-                .ThenByDescending(j => j.Id)
                 .ToListAsync();
+
+            // Sort in memory: non-completed first (by date desc), then completed (by date desc)
+            jobs = jobs
+                .OrderBy(j => j.Status == JobStatus.Complete ? 1 : 0)
+                .ThenByDescending(j => j.DateStarted)
+                .ThenByDescending(j => j.Id)
+                .ToList();
 
             foreach (var job in jobs)
             {
