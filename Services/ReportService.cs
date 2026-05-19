@@ -42,9 +42,9 @@ public class ReportService
 
             // Create PDF
             using var stream = new MemoryStream();
-            var writer = new PdfWriter(stream);
-            var pdfDoc = new PdfDocument(writer);
-            var document = new Document(pdfDoc);
+            using var writer = new PdfWriter(stream);
+            using var pdfDoc = new PdfDocument(writer);
+            using var document = new Document(pdfDoc);
 
             // Add title
             document.Add(new Paragraph("Job Status Report")
@@ -60,7 +60,7 @@ public class ReportService
 
             // Add summary
             var completedCount = jobs.Count(j => j.Status == JobStatus.Complete);
-            var changesNeededCount = jobs.Count(j => j.Status == "Changes Needed");
+            var changesNeededCount = jobs.Count(j => j.Status == JobStatus.ChangesNeeded);
             document.Add(new Paragraph($"Total Jobs: {jobs.Count} | Completed (Last 4 Weeks): {completedCount} | Changes Needed: {changesNeededCount}")
                 .SetFontSize(11)
                 .SetBold()
@@ -69,7 +69,44 @@ public class ReportService
             // Add jobs
             foreach (var job in jobs)
             {
-                AddJobSection(document, job);
+                document.Add(new Paragraph($"{job.JobName} - {job.ClientName}")
+                    .SetFontSize(12)
+                    .SetBold()
+                    .SetMarginTop(10)
+                    .SetMarginBottom(4));
+
+                document.Add(new Paragraph($"Client: {job.ClientName}")
+                    .SetFontSize(10));
+                document.Add(new Paragraph($"Address: {job.SiteAddress}")
+                    .SetFontSize(10));
+                document.Add(new Paragraph($"Status: {job.Status}")
+                    .SetFontSize(10));
+                document.Add(new Paragraph($"Date Started: {job.DateStarted:MMMM dd, yyyy}")
+                    .SetFontSize(10));
+
+                if (job.Status == JobStatus.ChangesNeeded && job.JobNotes.Any())
+                {
+                    document.Add(new Paragraph("Notes:")
+                        .SetFontSize(11)
+                        .SetBold()
+                        .SetMarginTop(4)
+                        .SetMarginBottom(2));
+
+                    foreach (var note in job.JobNotes)
+                    {
+                        document.Add(new Paragraph($"• {note.Content}")
+                            .SetFontSize(10)
+                            .SetMarginLeft(10)
+                            .SetMarginBottom(2));
+                        document.Add(new Paragraph($"   {note.AddedBy} ({note.CreatedAt:MMM dd, yyyy h:mm tt})")
+                            .SetFontSize(9)
+                            .SetMarginLeft(14)
+                            .SetMarginBottom(4));
+                    }
+                }
+
+                document.Add(new Paragraph(" ")
+                    .SetMarginBottom(4));
             }
 
             document.Close();
