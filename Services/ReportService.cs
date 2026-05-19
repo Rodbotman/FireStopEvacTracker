@@ -3,6 +3,7 @@ using FireStopEvacTracker.Models;
 using iText.Kernel.Pdf;
 using iText.Kernel.Colors;
 using iText.Layout;
+using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
 using Microsoft.EntityFrameworkCore;
@@ -66,39 +67,46 @@ public class ReportService
                 .SetBold()
                 .SetMarginBottom(20));
 
-            // Add jobs
+            // Add job table header
+            var table = new Table(UnitValue.CreatePercentArray(new float[] { 1.2f, 2f, 2.5f, 3f, 1.1f }))
+                .UseAllAvailableWidth()
+                .SetMarginBottom(20);
+
+            foreach (var header in new[] { "Date", "Job Name", "Client", "Address", "Status" })
+            {
+                table.AddHeaderCell(new Cell().Add(new Paragraph(header)
+                        .SetFontSize(10)
+                        .SetBold()
+                        .SetFontColor(new DeviceRgb(255, 255, 255)))
+                    .SetBackgroundColor(new DeviceRgb(40, 44, 52))
+                    .SetPadding(6));
+            }
+
             foreach (var job in jobs)
             {
-                document.Add(new Paragraph($"{job.JobName} - {job.ClientName}")
-                    .SetFontSize(12)
-                    .SetBold());
-
-                document.Add(new Paragraph($"Client: {job.ClientName}")
-                    .SetFontSize(10));
-                document.Add(new Paragraph($"Address: {job.SiteAddress}")
-                    .SetFontSize(10));
-                document.Add(new Paragraph($"Status: {job.Status}")
-                    .SetFontSize(10));
-                document.Add(new Paragraph($"Date Started: {job.DateStarted:MMMM dd, yyyy}")
-                    .SetFontSize(10));
+                table.AddCell(CreateBodyCell(job.DateStarted.ToString("dd/MM/yyyy")));
+                table.AddCell(CreateBodyCell(job.JobName));
+                table.AddCell(CreateBodyCell(job.ClientName));
+                table.AddCell(CreateBodyCell(job.SiteAddress));
+                table.AddCell(CreateStatusCell(job.Status));
 
                 if (job.Status == JobStatus.ChangesNeeded && job.JobNotes.Any())
                 {
-                    document.Add(new Paragraph("Notes:")
-                        .SetFontSize(11)
-                        .SetBold());
-
-                    foreach (var note in job.JobNotes)
-                    {
-                        document.Add(new Paragraph($"• {note.Content}")
-                            .SetFontSize(10));
-                        document.Add(new Paragraph($"{note.AddedBy} ({note.CreatedAt:MMM dd, yyyy h:mm tt})")
-                            .SetFontSize(9));
-                    }
+                    var notesText = string.Join("\n", job.JobNotes.Select(note => $"• {note.Content} ({note.AddedBy} {note.CreatedAt:MMM dd, yyyy h:mm tt})"));
+                    table.AddCell(new Cell(1, 5)
+                        .Add(new Paragraph("Notes:")
+                            .SetFontSize(10)
+                            .SetBold())
+                        .Add(new Paragraph(notesText)
+                            .SetFontSize(9)
+                            .SetMarginTop(4))
+                        .SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f))
+                        .SetBackgroundColor(new DeviceRgb(245, 245, 245))
+                        .SetPadding(8));
                 }
-
-                document.Add(new Paragraph(""));
             }
+
+            document.Add(table);
 
             document.Close();
             return stream.ToArray();
@@ -107,6 +115,27 @@ public class ReportService
         {
             throw new Exception($"PDF Generation Error: {ex.GetType().Name} - {ex.Message}", ex);
         }
+    }
+
+    private Cell CreateBodyCell(string text)
+    {
+        return new Cell().Add(new Paragraph(text)
+            .SetFontSize(10))
+            .SetPadding(6)
+            .SetBorder(new SolidBorder(new DeviceRgb(211, 211, 211), 0.5f));
+    }
+
+    private Cell CreateStatusCell(string status)
+    {
+        var statusColor = GetStatusColor(status);
+        return new Cell().Add(new Paragraph(status)
+            .SetFontSize(9)
+            .SetBold()
+            .SetFontColor(new DeviceRgb(0, 0, 0))
+            .SetTextAlignment(TextAlignment.CENTER))
+            .SetBackgroundColor(statusColor)
+            .SetPadding(6)
+            .SetBorder(new SolidBorder(new DeviceRgb(211, 211, 211), 0.5f));
     }
 
     private void AddJobSection(Document document, EvacJob job)
