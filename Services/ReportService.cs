@@ -71,9 +71,7 @@ public class ReportService
             {
                 document.Add(new Paragraph($"{job.JobName} - {job.ClientName}")
                     .SetFontSize(12)
-                    .SetBold()
-                    .SetMarginTop(10)
-                    .SetMarginBottom(4));
+                    .SetBold());
 
                 document.Add(new Paragraph($"Client: {job.ClientName}")
                     .SetFontSize(10));
@@ -88,25 +86,18 @@ public class ReportService
                 {
                     document.Add(new Paragraph("Notes:")
                         .SetFontSize(11)
-                        .SetBold()
-                        .SetMarginTop(4)
-                        .SetMarginBottom(2));
+                        .SetBold());
 
                     foreach (var note in job.JobNotes)
                     {
                         document.Add(new Paragraph($"• {note.Content}")
-                            .SetFontSize(10)
-                            .SetMarginLeft(10)
-                            .SetMarginBottom(2));
-                        document.Add(new Paragraph($"   {note.AddedBy} ({note.CreatedAt:MMM dd, yyyy h:mm tt})")
-                            .SetFontSize(9)
-                            .SetMarginLeft(14)
-                            .SetMarginBottom(4));
+                            .SetFontSize(10));
+                        document.Add(new Paragraph($"{note.AddedBy} ({note.CreatedAt:MMM dd, yyyy h:mm tt})")
+                            .SetFontSize(9));
                     }
                 }
 
-                document.Add(new Paragraph(" ")
-                    .SetMarginBottom(4));
+                document.Add(new Paragraph(""));
             }
 
             document.Close();

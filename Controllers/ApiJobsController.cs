@@ -108,7 +108,13 @@ public class JobsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = "Error generating report: " + ex.Message });
+            var errorMessage = "Error generating report: " + ex.Message;
+            var host = Request.Host.Host;
+            if (host.Contains("134.199.146.192") || host.Contains("staging.firestopevacs"))
+            {
+                errorMessage = ex.ToString();
+            }
+            return StatusCode(500, new { error = errorMessage });
         }
     }
 }
