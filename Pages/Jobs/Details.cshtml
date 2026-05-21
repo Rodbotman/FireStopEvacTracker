@@ -208,6 +208,56 @@
                             </div>
                         }
                     }
+
+                    @if (HttpContext.Session.GetString("Role") == "Admin")
+                    {
+                        <div style="background: #fff8e6; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #ffe1a3;">
+                            <strong>📧 Send to Customer</strong>
+                            <p style="margin: 8px 0; color: #666; font-size: 13px;">Email the approval link to the client. This will set the job status to <strong>Sent to Customer</strong>.</p>
+                            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                                <input type="email" id="customerEmail" placeholder="customer@example.com" value="@Model.Job.ClientEmail" style="flex: 1; min-width: 200px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" />
+                                <button type="button" id="sendToCustomerBtn" class="primary-button" onclick="sendToCustomer()">Send</button>
+                            </div>
+                            <div id="sendResult" style="margin-top: 10px; font-size: 13px; min-height: 18px;"></div>
+                        </div>
+                        <script>
+                            async function sendToCustomer() {
+                                const emailInput = document.getElementById('customerEmail');
+                                const btn = document.getElementById('sendToCustomerBtn');
+                                const result = document.getElementById('sendResult');
+                                const email = (emailInput.value || '').trim();
+                                if (!email) {
+                                    result.style.color = '#dc3545';
+                                    result.textContent = 'Enter an email address first.';
+                                    return;
+                                }
+                                result.style.color = '#666';
+                                result.textContent = 'Sending…';
+                                btn.disabled = true;
+                                try {
+                                    const response = await fetch('/api/jobs/send-to-customer/@Model.Job.Id', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ clientEmail: email })
+                                    });
+                                    const data = await response.json();
+                                    if (response.ok) {
+                                        result.style.color = '#28a745';
+                                        result.textContent = '✓ Sent to ' + email + '. Reloading…';
+                                        setTimeout(() => window.location.reload(), 1500);
+                                    } else {
+                                        result.style.color = '#dc3545';
+                                        result.textContent = 'Error: ' + (data.error || 'Failed to send');
+                                        btn.disabled = false;
+                                    }
+                                } catch (e) {
+                                    result.style.color = '#dc3545';
+                                    result.textContent = 'Error: ' + e.message;
+                                    btn.disabled = false;
+                                }
+                            }
+                        </script>
+                    }
                 </section>
 
                 <section class="details-card wide-card">

@@ -14,6 +14,10 @@ public class EvacJob
     [Display(Name = "Client Name")]
     public string ClientName { get; set; } = string.Empty;
 
+    [Display(Name = "Client Email")]
+    [EmailAddress]
+    public string? ClientEmail { get; set; }
+
     [Required]
     [Display(Name = "Site Address")]
     public string SiteAddress { get; set; } = string.Empty;

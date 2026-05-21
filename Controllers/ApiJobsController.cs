@@ -3,6 +3,7 @@ using FireStopEvacTracker.Models;
 using FireStopEvacTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Net.Mime;
 
 namespace FireStopEvacTracker.Controllers;
@@ -15,13 +16,17 @@ public class JobsController : ControllerBase
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly AuthService _authService;
     private readonly ReportService _reportService;
+    private readonly IEmailService _emailService;
+    private readonly EmailOptions _emailOptions;
 
-    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor, AuthService authService, ReportService reportService)
+    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor, AuthService authService, ReportService reportService, IEmailService emailService, IOptions<EmailOptions> emailOptions)
     {
         _db = db;
         _httpContextAccessor = httpContextAccessor;
         _authService = authService;
         _reportService = reportService;
+        _emailService = emailService;
+        _emailOptions = emailOptions.Value;
     }
 
     [HttpPost("toggle-billed/{id}")]
@@ -91,6 +96,76 @@ public class JobsController : ControllerBase
         return Ok(new { billedAmount = job.BilledAmount });
     }
 
+    [HttpPost("send-to-customer/{id}")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> SendToCustomer(int id, [FromBody] SendToCustomerRequest request)
+    {
+        if (!await _authService.IsUserAuthorizedAsync(_httpContextAccessor.HttpContext!, UserRole.Admin))
+            return Unauthorized(new { error = "Admins only" });
+
+        var clientEmail = request?.ClientEmail?.Trim();
+        if (string.IsNullOrWhiteSpace(clientEmail))
+            return BadRequest(new { error = "Client email is required" });
+
+        var job = await _db.EvacJobs.FindAsync(id);
+        if (job is null)
+            return NotFound();
+
+        if (string.IsNullOrEmpty(job.ShareCode))
+            job.ShareCode = GenerateShareCode();
+
+        job.ClientEmail = clientEmail;
+        job.UpdatedAt = DateTime.UtcNow;
+
+        var baseUrl = _emailOptions.AppBaseUrl?.TrimEnd('/');
+        if (string.IsNullOrEmpty(baseUrl))
+            return StatusCode(500, new { error = "App base URL not configured" });
+
+        var approvalLink = $"{baseUrl}/JobApprove/{job.ShareCode}";
+        var safeClient = System.Net.WebUtility.HtmlEncode(job.ClientName);
+        var safeAddress = System.Net.WebUtility.HtmlEncode(job.SiteAddress);
+
+        var subject = $"Evacuation diagram approval - {job.ClientName}";
+        var html = $@"<p>Hello {safeClient},</p>
+<p>Your evacuation diagram for <strong>{safeAddress}</strong> is ready for your review.</p>
+<p>Please click the link below to view the diagram and either approve it or request changes:</p>
+<p><a href=""{approvalLink}"" style=""display:inline-block;padding:12px 24px;background:#e3382f;color:#fff;text-decoration:none;border-radius:4px;font-weight:600"">Review evacuation diagram</a></p>
+<p style=""font-size:13px;color:#555"">Or copy this link into your browser:<br/>{approvalLink}</p>
+<p>Thank you,<br/>FireStop</p>";
+        var text = $"Hello {job.ClientName},\n\nYour evacuation diagram for {job.SiteAddress} is ready for review.\n\nApproval link: {approvalLink}\n\nThank you,\nFireStop";
+
+        var result = await _emailService.SendAsync(clientEmail, subject, html, text, tag: "approval-link");
+        if (!result.Success)
+            return StatusCode(500, new { error = result.ErrorMessage ?? "Email send failed" });
+
+        if (job.Status != JobStatus.SentToCustomer)
+        {
+            job.Status = JobStatus.SentToCustomer;
+            job.StatusUpdatedAt = DateTime.UtcNow;
+        }
+
+        _db.JobNotes.Add(new JobNote
+        {
+            EvacJobId = job.Id,
+            Content = $"Sent approval link to {clientEmail}",
+            AddedBy = _httpContextAccessor.HttpContext?.Session.GetString("FullName") ?? "System",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { messageId = result.MessageId, status = job.Status, shareCode = job.ShareCode });
+    }
+
+    private static string GenerateShareCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Range(0, 16)
+            .Select(_ => chars[random.Next(chars.Length)])
+            .ToArray());
+    }
+
     [HttpGet("generate-status-report")]
     public async Task<IActionResult> GenerateStatusReport()
     {
@@ -122,4 +197,9 @@ public class JobsController : ControllerBase
 public class UpdateBilledAmountRequest
 {
     public decimal Amount { get; set; }
+}
+
+public class SendToCustomerRequest
+{
+    public string? ClientEmail { get; set; }
 }
