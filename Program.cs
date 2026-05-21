@@ -21,6 +21,9 @@ builder.Services.AddScoped<PdfStorageService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AuthService>();
 
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.AddScoped<IEmailService, PostmarkEmailService>();
+
 var app = builder.Build();
 
 // Apply any pending migrations (with error handling)

@@ -10,6 +10,10 @@ obj/
 # ASP.NET user secrets / local config
 appsettings.Development.json
 
+# Secrets / environment overrides (per-machine, never commit)
+.env
+.env.local
+
 # Uploaded files (runtime data)
 wwwroot/uploads/
 

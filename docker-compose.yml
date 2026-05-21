@@ -9,6 +9,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/firestop_evac_tracker.db
       - TZ=Australia/Sydney
+      - Email__PostmarkServerToken=${POSTMARK_SERVER_TOKEN:-}
+      - Email__FromAddress=${EMAIL_FROM_ADDRESS:-}
+      - Email__FromName=${EMAIL_FROM_NAME:-FireStop Evac Tracker}
+      - Email__AppBaseUrl=${APP_BASE_URL:-}
     volumes:
       - ./data:/app/data
       - ./uploads:/app/wwwroot/uploads
