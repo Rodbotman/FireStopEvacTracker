@@ -8,6 +8,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/staging_firestop.db
+      - TZ=Australia/Sydney
     volumes:
       - ./data-staging:/app/data
       - ./uploads-staging:/app/wwwroot/uploads
