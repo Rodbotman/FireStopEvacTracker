@@ -90,6 +90,7 @@ public static class JobStatus
     public const string SentToCustomer = "Sent to Customer";
     public const string ChangesNeeded = "Changes Needed";
     public const string Approved = "Approved";
+    public const string ToPrint = "To Print";
     public const string Complete = "Complete";
 
     public static readonly string[] All =
@@ -100,6 +101,7 @@ public static class JobStatus
         SentToCustomer,
         ChangesNeeded,
         Approved,
+        ToPrint,
         Complete
     ];
 }

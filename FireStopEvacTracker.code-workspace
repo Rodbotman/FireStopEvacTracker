@@ -1,8 +1,8 @@
 {
   "folders": [
     {
-      "path": ".",
-    },
+      "path": "."
+    }
   ],
   "settings": {
     "chat.tools.terminal.autoApprove": {
@@ -20,6 +20,6 @@
       },
       "dotnet ef": true,
       "docker build": true
-    },
-  },
+    }
+  }
 }

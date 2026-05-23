@@ -1,0 +1,150 @@
+Stopping firestop_staging_1 ... 
+Stopping firestop_staging_1 ... done
+Removing firestop_staging_1 ... 
+Removing firestop_staging_1 ... done
+Removing network firestop_default
+Creating network "firestop_default" with the default driver
+Building staging
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  24.85MB
+Step 1/10 : FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
+ ---> 4b1cdaa57eed
+Step 2/10 : WORKDIR /source
+ ---> Using cache
+ ---> 1c4e818b31ca
+Step 3/10 : COPY . .
+ ---> Using cache
+ ---> 49e612ba5b97
+Step 4/10 : RUN dotnet publish -c Release -o /app
+ ---> Using cache
+ ---> b4d6c1ffa769
+Step 5/10 : FROM mcr.microsoft.com/dotnet/aspnet:8.0
+ ---> f88c77644f4c
+Step 6/10 : WORKDIR /app
+ ---> Using cache
+ ---> c9bd64781edf
+Step 7/10 : COPY --from=builder /app .
+ ---> Using cache
+ ---> d53bb6bcee9b
+Step 8/10 : ENV ASPNETCORE_URLS=http://+:5000
+ ---> Using cache
+ ---> 96fbc9bee7c2
+Step 9/10 : EXPOSE 5000
+ ---> Using cache
+ ---> 6b0b4a109502
+Step 10/10 : ENTRYPOINT ["dotnet", "FireStopEvacTracker.dll"]
+ ---> Using cache
+ ---> 6fcabc8aa716
+Successfully built 6fcabc8aa716
+Successfully tagged firestop_staging:latest
+Creating firestop_staging_1 ... 
+Creating firestop_staging_1 ... done
+Attaching to firestop_staging_1
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT "MigrationId", "ProductVersion"
+[36mstaging_1  |[0m       FROM "__EFMigrationsHistory"
+[36mstaging_1  |[0m       ORDER BY "MigrationId";
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Migrations[20405]
+[36mstaging_1  |[0m       No migrations were applied. The database is already up to date.
+[36mstaging_1  |[0m [SEED] Starting seed initialization...
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT COUNT(*) FROM "sqlite_master" WHERE "type" = 'table' AND "rootpage" IS NOT NULL;
+[36mstaging_1  |[0m [SEED] Database ensured created
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (4ms) [Parameters=[@__userData_Username_0='?' (Size = 18), @__userData_Email_1='?' (Size = 18)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[@__userData_Username_0='?' (Size = 7), @__userData_Email_1='?' (Size = 19)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[@__userData_Username_0='?' (Size = 5), @__userData_Email_1='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m [SEED] Users seeded
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "EvacJobs" AS "e")
+[36mstaging_1  |[0m [SEED] Checking if jobs exist. Any jobs? True
+[36mstaging_1  |[0m [SEED] Jobs already exist, skipping seed
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "EvacJobs" AS "e")
+[36mstaging_1  |[0m warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+[36mstaging_1  |[0m       Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+[36mstaging_1  |[0m info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+[36mstaging_1  |[0m       User profile is available. Using '/root/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+[36mstaging_1  |[0m [SEED] Starting seed initialization...
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT COUNT(*) FROM "sqlite_master" WHERE "type" = 'table' AND "rootpage" IS NOT NULL;
+[36mstaging_1  |[0m [SEED] Database ensured created
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[@__userData_Username_0='?' (Size = 18), @__userData_Email_1='?' (Size = 18)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[@__userData_Username_0='?' (Size = 7), @__userData_Email_1='?' (Size = 19)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[@__userData_Username_0='?' (Size = 5), @__userData_Email_1='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "Users" AS "u"
+[36mstaging_1  |[0m           WHERE "u"."Username" = @__userData_Username_0 OR "u"."Email" = @__userData_Email_1)
+[36mstaging_1  |[0m [SEED] Users seeded
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "EvacJobs" AS "e")
+[36mstaging_1  |[0m [SEED] Checking if jobs exist. Any jobs? True
+[36mstaging_1  |[0m info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+[36mstaging_1  |[0m       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[36mstaging_1  |[0m       SELECT EXISTS (
+[36mstaging_1  |[0m           SELECT 1
+[36mstaging_1  |[0m           FROM "EvacJobs" AS "e")
+[36mstaging_1  |[0m [SEED] Jobs already exist, skipping seed
+[36mstaging_1  |[0m info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[58]
+[36mstaging_1  |[0m       Creating key {66160b9b-d517-40bc-92c7-216d5fab38ec} with creation date 2026-05-18 07:54:30Z, activation date 2026-05-18 07:54:30Z, and expiration date 2026-08-16 07:54:30Z.
+[36mstaging_1  |[0m warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+[36mstaging_1  |[0m       No XML encryptor configured. Key {66160b9b-d517-40bc-92c7-216d5fab38ec} may be persisted to storage in unencrypted form.
+[36mstaging_1  |[0m info: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[39]
+[36mstaging_1  |[0m       Writing data to file '/root/.aspnet/DataProtection-Keys/key-66160b9b-d517-40bc-92c7-216d5fab38ec.xml'.
+[36mstaging_1  |[0m warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+[36mstaging_1  |[0m       Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:5000'.
+[36mstaging_1  |[0m info: Microsoft.Hosting.Lifetime[14]
+[36mstaging_1  |[0m       Now listening on: http://[::]:5000
+[36mstaging_1  |[0m info: Microsoft.Hosting.Lifetime[0]
+[36mstaging_1  |[0m       Application started. Press Ctrl+C to shut down.
+[36mstaging_1  |[0m info: Microsoft.Hosting.Lifetime[0]
+[36mstaging_1  |[0m       Hosting environment: Production
+[36mstaging_1  |[0m info: Microsoft.Hosting.Lifetime[0]
+[36mstaging_1  |[0m       Content root path: /app
