@@ -209,6 +209,8 @@
             const rect = img.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
 
+            console.log('Canvas init - Image size:', rect.width, 'x', rect.height);
+
             // Set canvas to match image dimensions
             drawingCanvas.width = rect.width;
             drawingCanvas.height = rect.height;
@@ -218,11 +220,18 @@
             drawingCanvas.style.height = '100%';
             drawingCanvas.style.display = 'block';
 
-            fabricCanvas = new fabric.Canvas('drawingCanvas', {
-                width: rect.width,
-                height: rect.height,
-                isDrawingMode: false
-            });
+            console.log('Canvas created:', drawingCanvas.width, 'x', drawingCanvas.height);
+
+            try {
+                fabricCanvas = new fabric.Canvas('drawingCanvas', {
+                    width: rect.width,
+                    height: rect.height,
+                    isDrawingMode: false
+                });
+                console.log('Fabric canvas initialized successfully');
+            } catch(e) {
+                console.error('Error initializing Fabric canvas:', e);
+            }
 
             drawingHistory = [JSON.stringify(fabricCanvas)];
         };
@@ -236,7 +245,11 @@
     }
 
     function enableDrawing(mode = 'pen') {
-        if (!fabricCanvas) return;
+        console.log('enableDrawing called, fabricCanvas:', fabricCanvas ? 'exists' : 'null', 'mode:', mode);
+        if (!fabricCanvas) {
+            console.error('fabricCanvas is null - canvas not initialized');
+            return;
+        }
         isDrawingEnabled = true;
         fabricCanvas.isDrawingMode = true;
 
@@ -244,9 +257,11 @@
             fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
             fabricCanvas.freeDrawingBrush.color = currentPenColor;
             fabricCanvas.freeDrawingBrush.width = 3;
+            console.log('Pen mode enabled, color:', currentPenColor);
         } else {
             fabricCanvas.freeDrawingBrush = new fabric.EraserBrush(fabricCanvas);
             fabricCanvas.freeDrawingBrush.width = 15;
+            console.log('Eraser mode enabled');
         }
         fabricCanvas.on('object:added', () => drawingHistory.push(JSON.stringify(fabricCanvas)));
         updateToolButtons(mode);
