@@ -52,21 +52,21 @@
                 <div class="pdf-section">
                     <p style="margin-bottom: 10px;">📄 Review & Markup Diagram:</p>
 
-                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden;" data-approval-id="@(Model.Approval?.Id ?? 0)">
-                        <div style="position: relative; width: 100%; height: 0; padding-bottom: 66.67%;">
-                            <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; user-select: none; display: block;" />
-                            <canvas id="drawingCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; border-radius: 8px; display: none; z-index: 10; pointer-events: auto;"></canvas>
-                        </div>
+                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; max-height: 600px;" data-approval-id="@(Model.Approval?.Id ?? 0)">
+                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; display: block; transition: transform 0.3s ease;" />
                     </div>
 
                     <div id="toolBar" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; margin-top: 15px;">
-                        <button type="button" id="penTool" class="tool-btn tool-active" title="Pen" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Pen</button>
+                        <button type="button" id="zoomInBtn" class="tool-btn" title="Zoom In" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🔍+ Zoom In</button>
+                        <button type="button" id="zoomOutBtn" class="tool-btn" title="Zoom Out" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🔍- Zoom Out</button>
+                        <button type="button" id="zoomResetBtn" class="tool-btn" title="Reset Zoom" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">↺ Reset</button>
+                        <div style="border-left: 1px solid #ccc; height: 24px; margin: 0 4px;"></div>
+                        <button type="button" id="penTool" class="tool-btn tool-active" title="Draw" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Draw</button>
                         <div style="display: flex; gap: 4px; border-left: 1px solid #ccc; padding-left: 6px;">
                             <button type="button" class="color-btn" data-color="#FF0000" style="background: #FF0000; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Red"></button>
                             <button type="button" class="color-btn" data-color="#0000FF" style="background: #0000FF; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Blue"></button>
                             <button type="button" class="color-btn" data-color="#00AA00" style="background: #00AA00; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Green"></button>
                         </div>
-                        <button type="button" id="eraserTool" class="tool-btn" title="Eraser" style="background: #ff9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 10px;">🗑️ Eraser</button>
                         <button type="button" id="undoBtn" class="tool-btn" title="Undo" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 10px;">↶ Undo</button>
                         <button type="button" id="clearBtn" class="tool-btn" title="Clear All" style="background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 4px;">🗑️ Clear</button>
                         <button type="button" id="saveAnnotationBtn" class="tool-btn" title="Save Markup" style="background: #9C27B0; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: auto;">💾 Save Markup</button>
@@ -178,13 +178,163 @@
         </div>
     </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/annotorious/3.0.0/annotorious.min.js"></script>
 
 <script>
-    let fabricCanvas = null;
-    let drawingHistory = [];
-    let currentPenColor = '#FF0000';
-    let isDrawingEnabled = false;
+    let anno = null;
+    let currentColor = '#FF0000';
+    let zoomLevel = 1;
+    const img = document.getElementById('diagramImage');
+    const container = document.getElementById('drawingContainer');
+
+    // Initialize Annotorious
+    window.addEventListener('load', () => {
+        anno = Annotorious.init({
+            image: img,
+            tools: ['rectangle', 'polygon', 'circle', 'freehand'],
+            disableEditor: true,
+            drawingEnabled: true
+        });
+
+        // Set default tool to freehand drawing
+        if (anno) {
+            anno.setSelected({ tool: 'freehand' });
+        }
+    });
+
+    // Zoom functionality
+    function updateZoom() {
+        img.style.transform = `scale(${zoomLevel})`;
+        img.style.transformOrigin = 'top center';
+    }
+
+    document.getElementById('zoomInBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomLevel = Math.min(zoomLevel + 0.2, 3);
+        updateZoom();
+    });
+
+    document.getElementById('zoomOutBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomLevel = Math.max(zoomLevel - 0.2, 1);
+        updateZoom();
+    });
+
+    document.getElementById('zoomResetBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomLevel = 1;
+        updateZoom();
+    });
+
+    // Scroll wheel zoom
+    container.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomLevel = Math.min(zoomLevel + 0.1, 3);
+            } else {
+                zoomLevel = Math.max(zoomLevel - 0.1, 1);
+            }
+            updateZoom();
+        }
+    });
+
+    // Pan when zoomed
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+
+    container.addEventListener('mousedown', (e) => {
+        if (zoomLevel > 1 && e.button === 2) {
+            isPanning = true;
+            panStart = { x: e.clientX, y: e.clientY };
+        }
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (isPanning) {
+            const dx = (e.clientX - panStart.x) / (zoomLevel * 100);
+            const dy = (e.clientY - panStart.y) / (zoomLevel * 100);
+            img.style.marginLeft = (dx) + 'px';
+            img.style.marginTop = (dy) + 'px';
+        }
+    });
+
+    container.addEventListener('mouseup', () => {
+        isPanning = false;
+    });
+
+    // Color buttons
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentColor = btn.dataset.color;
+            if (anno) {
+                anno.setAuthInfo({
+                    user: 'reviewer'
+                });
+            }
+        });
+    });
+
+    // Draw tool
+    document.getElementById('penTool')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (anno) {
+            anno.setSelected({ tool: 'freehand' });
+            document.getElementById('penTool').classList.add('tool-active');
+        }
+    });
+
+    // Undo button
+    document.getElementById('undoBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (anno) {
+            const annotations = anno.getAnnotations();
+            if (annotations.length > 0) {
+                anno.removeAnnotation(annotations[annotations.length - 1]);
+            }
+        }
+    });
+
+    // Clear button
+    document.getElementById('clearBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Clear all drawings?') && anno) {
+            anno.getAnnotations().forEach(a => anno.removeAnnotation(a));
+        }
+    });
+
+    // Save button
+    document.getElementById('saveAnnotationBtn')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const approvalId = container?.dataset.approvalId;
+
+        if (!approvalId || approvalId === '0') {
+            alert('Approval ID not found');
+            return;
+        }
+
+        try {
+            // Capture image with annotations using html2canvas
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = async () => {
+                const canvas = await html2canvas(img);
+                const res = await fetch('/api/jobs/save-annotation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jobApprovalId: parseInt(approvalId),
+                        canvasDataUrl: canvas.toDataURL('image/png')
+                    })
+                });
+                alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
+            };
+            document.head.appendChild(script);
+        } catch(err) {
+            alert('Error: ' + err.message);
+        }
+    });
 
     // Checklist progress
     document.querySelectorAll('.approval-checkbox').forEach(checkbox => {
@@ -198,116 +348,4 @@
         document.getElementById('progressBar').style.width = percentage + '%';
         document.getElementById('itemsCount').textContent = checked;
     }
-
-    // Drawing canvas initialization
-    function initializeDrawingCanvas() {
-        const img = document.getElementById('diagramImage');
-        const drawingCanvas = document.getElementById('drawingCanvas');
-        if (!img || !drawingCanvas) return;
-
-        const loadCanvas = () => {
-            const rect = img.getBoundingClientRect();
-            console.log('Canvas init - Image size:', rect.width, 'x', rect.height);
-
-            // Set canvas drawing surface to match image pixel dimensions
-            drawingCanvas.width = rect.width;
-            drawingCanvas.height = rect.height;
-            drawingCanvas.style.display = 'block';
-
-            console.log('Canvas created:', drawingCanvas.width, 'x', drawingCanvas.height);
-
-            try {
-                fabricCanvas = new fabric.Canvas('drawingCanvas', {
-                    width: rect.width,
-                    height: rect.height,
-                    isDrawingMode: false
-                });
-                console.log('Fabric canvas initialized successfully');
-            } catch(e) {
-                console.error('Error initializing Fabric canvas:', e);
-            }
-
-            drawingHistory = [JSON.stringify(fabricCanvas)];
-        };
-
-        // Initialize when image is ready
-        if (img.complete && img.naturalWidth > 0) {
-            setTimeout(loadCanvas, 50);
-        } else {
-            img.onload = () => setTimeout(loadCanvas, 50);
-        }
-    }
-
-    function enableDrawing(mode = 'pen') {
-        console.log('enableDrawing called, fabricCanvas:', fabricCanvas ? 'exists' : 'null', 'mode:', mode);
-        if (!fabricCanvas) {
-            console.error('fabricCanvas is null - canvas not initialized');
-            return;
-        }
-        isDrawingEnabled = true;
-        fabricCanvas.isDrawingMode = true;
-
-        if (mode === 'pen') {
-            fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
-            fabricCanvas.freeDrawingBrush.color = currentPenColor;
-            fabricCanvas.freeDrawingBrush.width = 3;
-            console.log('Pen mode enabled, color:', currentPenColor);
-        } else {
-            fabricCanvas.freeDrawingBrush = new fabric.EraserBrush(fabricCanvas);
-            fabricCanvas.freeDrawingBrush.width = 15;
-            console.log('Eraser mode enabled');
-        }
-        fabricCanvas.on('object:added', () => drawingHistory.push(JSON.stringify(fabricCanvas)));
-        updateToolButtons(mode);
-    }
-
-    function undo() {
-        if (!fabricCanvas || drawingHistory.length <= 1) return;
-        drawingHistory.pop();
-        fabricCanvas.loadFromJSON(drawingHistory[drawingHistory.length - 1], () => fabricCanvas.renderAll());
-    }
-
-    function clearCanvas() {
-        if (!fabricCanvas) return;
-        fabricCanvas.clear();
-        drawingHistory = [JSON.stringify(fabricCanvas)];
-    }
-
-    // Tool handlers
-    document.getElementById('penTool')?.addEventListener('click', e => { e.preventDefault(); enableDrawing('pen'); });
-    document.getElementById('eraserTool')?.addEventListener('click', e => { e.preventDefault(); enableDrawing('eraser'); });
-    document.querySelectorAll('.color-btn').forEach(btn => btn.addEventListener('click', e => {
-        e.preventDefault();
-        currentPenColor = btn.dataset.color;
-        if (fabricCanvas && isDrawingEnabled) fabricCanvas.freeDrawingBrush.color = currentPenColor;
-    }));
-    document.getElementById('undoBtn')?.addEventListener('click', e => { e.preventDefault(); undo(); });
-    document.getElementById('clearBtn')?.addEventListener('click', e => { e.preventDefault(); if (confirm('Clear all?')) clearCanvas(); });
-
-    document.getElementById('saveAnnotationBtn')?.addEventListener('click', async function(e) {
-        e.preventDefault();
-        if (!fabricCanvas || !fabricCanvas._objects.length) { alert('No annotations to save!'); return; }
-
-        const container = document.getElementById('drawingContainer');
-        const approvalId = container?.dataset.approvalId;
-        if (!approvalId || approvalId === '0') { alert('Please fill in your name first.'); return; }
-
-        try {
-            const res = await fetch('/api/jobs/save-annotation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    jobApprovalId: parseInt(approvalId),
-                    canvasDataUrl: fabricCanvas.toDataURL({ format: 'png', quality: 0.8 })
-                })
-            });
-            alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
-        } catch(err) { alert('Error: ' + err.message); }
-    });
-
-    function updateToolButtons(tool) {
-        document.getElementById('penTool')?.classList.toggle('tool-active', tool === 'pen');
-        document.getElementById('eraserTool')?.classList.toggle('tool-active', tool === 'eraser');
-    }
-    window.addEventListener('load', initializeDrawingCanvas);
 </script>
