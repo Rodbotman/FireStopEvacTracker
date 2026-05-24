@@ -206,6 +206,8 @@
         const loadCanvas = () => {
             drawingCanvas.width = img.offsetWidth;
             drawingCanvas.height = img.offsetHeight;
+            drawingCanvas.style.width = img.offsetWidth + 'px';
+            drawingCanvas.style.height = img.offsetHeight + 'px';
             drawingCanvas.style.display = 'block';
 
             fabricCanvas = new fabric.Canvas('drawingCanvas', {
