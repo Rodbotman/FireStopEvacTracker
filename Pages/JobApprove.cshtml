@@ -309,19 +309,30 @@
         document.getElementById('eraserTool').style.borderColor = 'transparent';
     });
 
-    // Eraser tool
+    // Eraser tool - removes annotations on click
     document.getElementById('eraserTool')?.addEventListener('click', (e) => {
         e.preventDefault();
         currentTool = 'eraser';
 
+        // Disable drawing mode when eraser is active
         if (anno) {
-            anno.setDrawingTool('freehand');
+            anno.setDrawingTool(null);
         }
 
         // Update tool button visuals
         document.getElementById('penTool').style.borderColor = 'transparent';
         document.getElementById('eraserTool').style.borderColor = '#333';
     });
+
+    // When eraser is active, clicking removes the last annotation
+    img.addEventListener('click', (e) => {
+        if (currentTool === 'eraser' && anno) {
+            const annotations = anno.getAnnotations();
+            if (annotations.length > 0) {
+                anno.removeAnnotation(annotations[annotations.length - 1]);
+            }
+        }
+    }, true);
 
     // Undo button
     document.getElementById('undoBtn')?.addEventListener('click', (e) => {
