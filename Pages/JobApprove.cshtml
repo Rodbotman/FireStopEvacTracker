@@ -178,13 +178,79 @@
         </div>
     </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-
 <script>
-    let fabricCanvas = null;
+    let ctx = null;
+    let isDrawing = false;
+    let currentMode = 'pen';
+    let currentColor = '#FF0000';
     let drawingHistory = [];
-    let currentPenColor = '#FF0000';
-    let isDrawingEnabled = false;
+
+    const canvas = document.getElementById('drawingCanvas');
+    const img = document.getElementById('diagramImage');
+
+    // Initialize canvas when image loads
+    function initCanvas() {
+        if (!canvas || !img) return;
+
+        canvas.width = img.offsetWidth;
+        canvas.height = img.offsetHeight;
+        ctx = canvas.getContext('2d');
+        canvas.style.display = 'block';
+
+        // Save initial state
+        drawingHistory = [canvas.toDataURL()];
+    }
+
+    // Wait for image to load
+    if (img.complete) {
+        initCanvas();
+    } else {
+        img.onload = initCanvas;
+    }
+
+    // Mouse events
+    canvas.addEventListener('mousedown', (e) => {
+        if (!ctx) return;
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (currentMode === 'pen') {
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else if (currentMode === 'eraser') {
+            ctx.clearRect(x - 10, y - 10, 20, 20);
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        if (!isDrawing || !ctx) return;
+        isDrawing = false;
+        ctx.closePath();
+        drawingHistory.push(canvas.toDataURL());
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        if (isDrawing && ctx) {
+            isDrawing = false;
+            ctx.closePath();
+            drawingHistory.push(canvas.toDataURL());
+        }
+    });
 
     // Checklist progress
     document.querySelectorAll('.approval-checkbox').forEach(checkbox => {
@@ -199,98 +265,56 @@
         document.getElementById('itemsCount').textContent = checked;
     }
 
-    // Drawing canvas initialization
-    function initializeDrawingCanvas() {
-        const img = document.getElementById('diagramImage');
-        const drawingCanvas = document.getElementById('drawingCanvas');
-        if (!img || !drawingCanvas) return;
-
-        const loadCanvas = () => {
-            const rect = img.getBoundingClientRect();
-            console.log('Canvas init - Image size:', rect.width, 'x', rect.height);
-
-            // Set canvas drawing surface to match image pixel dimensions
-            drawingCanvas.width = rect.width;
-            drawingCanvas.height = rect.height;
-            drawingCanvas.style.display = 'block';
-
-            console.log('Canvas created:', drawingCanvas.width, 'x', drawingCanvas.height);
-
-            try {
-                fabricCanvas = new fabric.Canvas('drawingCanvas', {
-                    width: rect.width,
-                    height: rect.height,
-                    isDrawingMode: false
-                });
-                console.log('Fabric canvas initialized successfully');
-            } catch(e) {
-                console.error('Error initializing Fabric canvas:', e);
-            }
-
-            drawingHistory = [JSON.stringify(fabricCanvas)];
-        };
-
-        // Initialize when image is ready
-        if (img.complete && img.naturalWidth > 0) {
-            setTimeout(loadCanvas, 50);
-        } else {
-            img.onload = () => setTimeout(loadCanvas, 50);
-        }
-    }
-
-    function enableDrawing(mode = 'pen') {
-        console.log('enableDrawing called, fabricCanvas:', fabricCanvas ? 'exists' : 'null', 'mode:', mode);
-        if (!fabricCanvas) {
-            console.error('fabricCanvas is null - canvas not initialized');
-            return;
-        }
-        isDrawingEnabled = true;
-        fabricCanvas.isDrawingMode = true;
-
-        if (mode === 'pen') {
-            fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
-            fabricCanvas.freeDrawingBrush.color = currentPenColor;
-            fabricCanvas.freeDrawingBrush.width = 3;
-            console.log('Pen mode enabled, color:', currentPenColor);
-        } else {
-            fabricCanvas.freeDrawingBrush = new fabric.EraserBrush(fabricCanvas);
-            fabricCanvas.freeDrawingBrush.width = 15;
-            console.log('Eraser mode enabled');
-        }
-        fabricCanvas.on('object:added', () => drawingHistory.push(JSON.stringify(fabricCanvas)));
-        updateToolButtons(mode);
-    }
-
-    function undo() {
-        if (!fabricCanvas || drawingHistory.length <= 1) return;
-        drawingHistory.pop();
-        fabricCanvas.loadFromJSON(drawingHistory[drawingHistory.length - 1], () => fabricCanvas.renderAll());
-    }
-
-    function clearCanvas() {
-        if (!fabricCanvas) return;
-        fabricCanvas.clear();
-        drawingHistory = [JSON.stringify(fabricCanvas)];
-    }
-
-    // Tool handlers
-    document.getElementById('penTool')?.addEventListener('click', e => { e.preventDefault(); enableDrawing('pen'); });
-    document.getElementById('eraserTool')?.addEventListener('click', e => { e.preventDefault(); enableDrawing('eraser'); });
-    document.querySelectorAll('.color-btn').forEach(btn => btn.addEventListener('click', e => {
+    // Tool buttons
+    document.getElementById('penTool').addEventListener('click', (e) => {
         e.preventDefault();
-        currentPenColor = btn.dataset.color;
-        if (fabricCanvas && isDrawingEnabled) fabricCanvas.freeDrawingBrush.color = currentPenColor;
-    }));
-    document.getElementById('undoBtn')?.addEventListener('click', e => { e.preventDefault(); undo(); });
-    document.getElementById('clearBtn')?.addEventListener('click', e => { e.preventDefault(); if (confirm('Clear all?')) clearCanvas(); });
+        currentMode = 'pen';
+        updateToolButtons('pen');
+    });
 
-    document.getElementById('saveAnnotationBtn')?.addEventListener('click', async function(e) {
+    document.getElementById('eraserTool').addEventListener('click', (e) => {
         e.preventDefault();
-        if (!fabricCanvas || !fabricCanvas._objects.length) { alert('No annotations to save!'); return; }
+        currentMode = 'eraser';
+        updateToolButtons('eraser');
+    });
 
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentColor = btn.dataset.color;
+        });
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (drawingHistory.length > 1) {
+            drawingHistory.pop();
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = drawingHistory[drawingHistory.length - 1];
+        }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Clear all drawings?')) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawingHistory = [canvas.toDataURL()];
+        }
+    });
+
+    document.getElementById('saveAnnotationBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
         const container = document.getElementById('drawingContainer');
         const approvalId = container?.dataset.approvalId;
-        if (!approvalId || approvalId === '0') { alert('Please fill in your name first.'); return; }
+
+        if (!approvalId || approvalId === '0') {
+            alert('Approval ID not found');
+            return;
+        }
 
         try {
             const res = await fetch('/api/jobs/save-annotation', {
@@ -298,16 +322,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     jobApprovalId: parseInt(approvalId),
-                    canvasDataUrl: fabricCanvas.toDataURL({ format: 'png', quality: 0.8 })
+                    canvasDataUrl: canvas.toDataURL('image/png')
                 })
             });
             alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
-        } catch(err) { alert('Error: ' + err.message); }
+        } catch(err) {
+            alert('Error: ' + err.message);
+        }
     });
 
     function updateToolButtons(tool) {
-        document.getElementById('penTool')?.classList.toggle('tool-active', tool === 'pen');
-        document.getElementById('eraserTool')?.classList.toggle('tool-active', tool === 'eraser');
+        document.getElementById('penTool').classList.toggle('tool-active', tool === 'pen');
+        document.getElementById('eraserTool').classList.toggle('tool-active', tool === 'eraser');
     }
-    window.addEventListener('load', initializeDrawingCanvas);
 </script>
