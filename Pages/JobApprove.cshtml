@@ -191,14 +191,15 @@
     window.addEventListener('load', () => {
         anno = Annotorious.init({
             image: img,
-            tools: ['rectangle', 'polygon', 'circle', 'freehand'],
-            disableEditor: true,
-            drawingEnabled: true
+            tools: ['freehand'],
+            drawingEnabled: true,
+            disableEditor: false,
+            autoSave: false
         });
 
-        // Set default tool to freehand drawing
+        // Set freehand as active tool
         if (anno) {
-            anno.setSelected({ tool: 'freehand' });
+            anno.setDrawingTool('freehand');
         }
     });
 
@@ -280,7 +281,7 @@
     document.getElementById('penTool')?.addEventListener('click', (e) => {
         e.preventDefault();
         if (anno) {
-            anno.setSelected({ tool: 'freehand' });
+            anno.setDrawingTool('freehand');
             document.getElementById('penTool').classList.add('tool-active');
         }
     });
