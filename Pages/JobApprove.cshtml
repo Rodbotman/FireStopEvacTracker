@@ -236,7 +236,6 @@
         fabricCanvas.on('object:added', () => drawingHistory.push(JSON.stringify(fabricCanvas)));
         updateToolButtons(mode);
     }
-    }
 
     function undo() {
         if (!fabricCanvas || drawingHistory.length <= 1) return;
