@@ -220,12 +220,60 @@
         canvas.style.width = '100%';
         canvas.style.height = '100%';
         canvas.style.cursor = 'crosshair';
-        canvas.style.zIndex = '10';
+        canvas.style.zIndex = '9999';
         canvas.style.backgroundColor = 'transparent';
 
         container.appendChild(canvas);
         ctx = canvas.getContext('2d');
         console.log('✓ Canvas initialized and added to DOM');
+
+        // Attach drawing event listeners AFTER canvas is created
+        attachCanvasEvents();
+    }
+
+    function attachCanvasEvents() {
+        if (!canvas || !ctx) return;
+        console.log('Attaching canvas event listeners');
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!ctx) return;
+            isDrawing = true;
+            drawingHistory.push(canvas.toDataURL());
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / zoomLevel;
+            const y = (e.clientY - rect.top) / zoomLevel;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !ctx) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / zoomLevel;
+            const y = (e.clientY - rect.top) / zoomLevel;
+
+            if (currentTool === 'eraser') {
+                ctx.clearRect(x - 10, y - 10, 20, 20);
+            } else {
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            ctx?.closePath();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+            ctx?.closePath();
+        });
     }
 
     // Prevent selection and drag
@@ -342,46 +390,6 @@
         document.getElementById('eraserTool').style.border = '2px solid #333';
     });
 
-    // Canvas drawing
-    canvas?.addEventListener('mousedown', (e) => {
-        if (!ctx) return;
-        isDrawing = true;
-        drawingHistory.push(canvas.toDataURL());
-        const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / zoomLevel;
-        const y = (e.clientY - rect.top) / zoomLevel;
-
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    });
-
-    canvas?.addEventListener('mousemove', (e) => {
-        if (!isDrawing || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / zoomLevel;
-        const y = (e.clientY - rect.top) / zoomLevel;
-
-        if (currentTool === 'eraser') {
-            ctx.clearRect(x - 10, y - 10, 20, 20);
-        } else {
-            ctx.strokeStyle = currentColor;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-    });
-
-    canvas?.addEventListener('mouseup', () => {
-        isDrawing = false;
-        ctx?.closePath();
-    });
-
-    canvas?.addEventListener('mouseleave', () => {
-        isDrawing = false;
-        ctx?.closePath();
-    });
 
     // Undo button
     document.getElementById('undoBtn')?.addEventListener('click', (e) => {
