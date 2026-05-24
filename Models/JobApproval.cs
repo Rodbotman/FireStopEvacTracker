@@ -10,6 +10,8 @@ public class JobApproval
     public int JobId { get; set; }
     public EvacJob? Job { get; set; }
 
+    public JobAnnotation? Annotation { get; set; }
+
     [Required]
     public string ClientEmail { get; set; } = string.Empty;
 

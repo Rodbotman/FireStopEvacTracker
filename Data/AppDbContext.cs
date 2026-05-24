@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<JobNote> JobNotes => Set<JobNote>();
     public DbSet<JobApproval> JobApprovals => Set<JobApproval>();
     public DbSet<JobDocument> JobDocuments => Set<JobDocument>();
+    public DbSet<JobAnnotation> JobAnnotations => Set<JobAnnotation>();
     public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,6 +50,16 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ClientEmail).HasMaxLength(255).IsRequired();
             entity.Property(e => e.ClientName).HasMaxLength(200).IsRequired();
+            entity.HasOne(a => a.Annotation)
+                .WithOne(an => an.JobApproval)
+                .HasForeignKey<JobAnnotation>(an => an.JobApprovalId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<JobAnnotation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CanvasDataUrl).IsRequired();
         });
 
         modelBuilder.Entity<JobDocument>(entity =>

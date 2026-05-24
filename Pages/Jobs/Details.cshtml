@@ -205,6 +205,14 @@
                                         @Model.Approval.ChangesRequired
                                     </div>
                                 }
+                                @if (Model.Approval.Annotation != null && !string.IsNullOrWhiteSpace(Model.Approval.Annotation.CanvasDataUrl))
+                                {
+                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                                        <strong>📝 Client Markup:</strong>
+                                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Annotations made by the client during approval:</p>
+                                        <img src="@Model.Approval.Annotation.CanvasDataUrl" alt="Client annotation markup" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px;" />
+                                    </div>
+                                }
                             </div>
                         }
                     }

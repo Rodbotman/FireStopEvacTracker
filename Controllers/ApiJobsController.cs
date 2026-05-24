@@ -166,6 +166,42 @@ public class JobsController : ControllerBase
             .ToArray());
     }
 
+    [HttpPost("save-annotation")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> SaveAnnotation([FromBody] SaveAnnotationRequest request)
+    {
+        if (request?.JobApprovalId <= 0 || string.IsNullOrWhiteSpace(request?.CanvasDataUrl))
+            return BadRequest(new { error = "Invalid approval ID or annotation data" });
+
+        var approval = await _db.JobApprovals
+            .Include(a => a.Annotation)
+            .FirstOrDefaultAsync(a => a.Id == request.JobApprovalId);
+
+        if (approval is null)
+            return NotFound(new { error = "Approval not found" });
+
+        if (approval.Annotation is null)
+        {
+            approval.Annotation = new JobAnnotation
+            {
+                JobApprovalId = approval.Id,
+                CanvasDataUrl = request.CanvasDataUrl,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.JobAnnotations.Add(approval.Annotation);
+        }
+        else
+        {
+            approval.Annotation.CanvasDataUrl = request.CanvasDataUrl;
+            approval.Annotation.CreatedAt = DateTime.UtcNow;
+        }
+
+        approval.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, annotationId = approval.Annotation.Id });
+    }
+
     [HttpGet("generate-status-report")]
     public async Task<IActionResult> GenerateStatusReport()
     {
@@ -202,4 +238,10 @@ public class UpdateBilledAmountRequest
 public class SendToCustomerRequest
 {
     public string? ClientEmail { get; set; }
+}
+
+public class SaveAnnotationRequest
+{
+    public int JobApprovalId { get; set; }
+    public string? CanvasDataUrl { get; set; }
 }

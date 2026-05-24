@@ -50,8 +50,39 @@
             @if (Model.Job.HasPdf)
             {
                 <div class="pdf-section">
-                    <p style="margin-bottom: 10px;">📄 View Draft Diagram:</p>
-                    <a href="@Model.Job.DraftPdfPath" target="_blank" class="pdf-link">View PDF</a>
+                    <p style="margin-bottom: 10px;">📄 Review & Markup Diagram:</p>
+
+                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;" data-approval-id="@(Model.Approval?.Id ?? 0)">
+                        <canvas id="pdfCanvas" style="display: block; margin: 0 auto; border-radius: 8px;"></canvas>
+                        <canvas id="drawingCanvas" style="position: absolute; top: 0; left: 0; cursor: crosshair; border-radius: 8px;"></canvas>
+                    </div>
+
+                    <div id="toolBar" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                        <div style="display: flex; gap: 6px; border-right: 2px solid #ddd; padding-right: 10px;">
+                            <button type="button" id="penTool" class="tool-btn tool-active" title="Pen" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Pen</button>
+
+                            <div style="display: flex; gap: 4px; border-left: 1px solid #ccc; padding-left: 6px;">
+                                <button type="button" class="color-btn" data-color="#FF0000" style="background: #FF0000; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Red"></button>
+                                <button type="button" class="color-btn" data-color="#0000FF" style="background: #0000FF; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Blue"></button>
+                                <button type="button" class="color-btn" data-color="#00AA00" style="background: #00AA00; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Green"></button>
+                            </div>
+                        </div>
+
+                        <button type="button" id="eraserTool" class="tool-btn" title="Eraser" style="background: #ff9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Eraser</button>
+
+                        <div style="border-left: 2px solid #ddd; padding-left: 10px;">
+                            <button type="button" id="undoBtn" class="tool-btn" title="Undo" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">↶ Undo</button>
+                            <button type="button" id="clearBtn" class="tool-btn" title="Clear All" style="background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 4px;">🗑️ Clear</button>
+                        </div>
+
+                        <button type="button" id="saveAnnotationBtn" class="tool-btn" title="Save Markup" style="background: #9C27B0; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: auto;">💾 Save Markup</button>
+                    </div>
+
+                    <p style="margin-bottom: 10px; color: #666; font-size: 13px;">💡 Tip: Use the pen tool to mark areas that need attention before approving. Your markup will be saved with your approval.</p>
+
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                        <p style="margin-bottom: 10px; color: #666;">Alternative: <a href="@Model.Job.DraftPdfPath" target="_blank" class="pdf-link">Download PDF to view</a></p>
+                    </div>
                 </div>
             }
 
@@ -156,7 +187,11 @@
         </div>
     </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 <script>
+    // Checklist progress tracking
     document.querySelectorAll('.approval-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateProgress();
@@ -167,12 +202,167 @@
         const checkboxes = document.querySelectorAll('.approval-checkbox');
         const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
         const percentage = (checked / 4) * 100;
-        
-        // Update progress bar with animation
+
         const progressBar = document.getElementById('progressBar');
         progressBar.style.width = percentage + '%';
-        
-        // Update count
+
         document.getElementById('itemsCount').textContent = checked;
     }
+
+    // Fabric.js Canvas Drawing
+    let fabricCanvas = null;
+    let drawingHistory = [];
+    let currentPenColor = '#FF0000';
+
+    async function initializeDrawingCanvas() {
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const container = document.getElementById('drawingContainer');
+
+        if (!pdfCanvas || !drawingCanvas || !container) return;
+
+        // Load and render PDF
+        try {
+            const pdfPath = '@Html.Raw(Model.Job.DraftPdfPath)';
+            const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+            const page = await pdf.getPage(1);
+            const scale = 2;
+            const viewport = page.getViewport({ scale });
+
+            pdfCanvas.width = viewport.width;
+            pdfCanvas.height = viewport.height;
+
+            const context = pdfCanvas.getContext('2d');
+            await page.render({ canvasContext: context, viewport }).promise;
+
+            // Initialize Fabric.js canvas
+            fabricCanvas = new fabric.Canvas('drawingCanvas', {
+                width: pdfCanvas.width,
+                height: pdfCanvas.height,
+                isDrawingMode: true
+            });
+
+            // Set initial pen properties
+            fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+            fabricCanvas.freeDrawingBrush.color = currentPenColor;
+            fabricCanvas.freeDrawingBrush.width = 3;
+
+            // Store state after each draw
+            fabricCanvas.on('object:added', function() {
+                saveHistory();
+            });
+        } catch (error) {
+            console.error('Error loading PDF:', error);
+        }
+    }
+
+    function saveHistory() {
+        if (!fabricCanvas) return;
+        drawingHistory.push(JSON.stringify(fabricCanvas));
+    }
+
+    function undo() {
+        if (!fabricCanvas || drawingHistory.length <= 1) return;
+        drawingHistory.pop();
+        const lastState = drawingHistory[drawingHistory.length - 1];
+        fabricCanvas.loadFromJSON(lastState, function() {
+            fabricCanvas.renderAll();
+        });
+    }
+
+    function clearCanvas() {
+        if (!fabricCanvas) return;
+        fabricCanvas.clear();
+        drawingHistory = [JSON.stringify(fabricCanvas)];
+    }
+
+    // Tool button handlers
+    document.getElementById('penTool')?.addEventListener('click', function() {
+        if (fabricCanvas) {
+            fabricCanvas.isDrawingMode = true;
+            fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+            fabricCanvas.freeDrawingBrush.color = currentPenColor;
+            fabricCanvas.freeDrawingBrush.width = 3;
+            updateToolButtons('pen');
+        }
+    });
+
+    document.getElementById('eraserTool')?.addEventListener('click', function() {
+        if (fabricCanvas) {
+            fabricCanvas.isDrawingMode = true;
+            fabricCanvas.freeDrawingBrush = new fabric.EraserBrush(fabricCanvas);
+            fabricCanvas.freeDrawingBrush.width = 15;
+            updateToolButtons('eraser');
+        }
+    });
+
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentPenColor = this.dataset.color;
+            if (fabricCanvas && fabricCanvas.isDrawingMode) {
+                fabricCanvas.freeDrawingBrush.color = currentPenColor;
+            }
+        });
+    });
+
+    document.getElementById('undoBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        undo();
+    });
+
+    document.getElementById('clearBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('Clear all annotations? This cannot be undone.')) {
+            clearCanvas();
+        }
+    });
+
+    document.getElementById('saveAnnotationBtn')?.addEventListener('click', async function(e) {
+        e.preventDefault();
+        if (!fabricCanvas || fabricCanvas._objects.length === 0) {
+            alert('No annotations to save. Draw something first!');
+            return;
+        }
+
+        const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 0.8 });
+        const container = document.getElementById('drawingContainer');
+        const jobApprovalId = container?.dataset.approvalId;
+
+        if (!jobApprovalId || jobApprovalId === '0') {
+            alert('Please fill in your name first to create an approval record.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/jobs/save-annotation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    jobApprovalId: parseInt(jobApprovalId),
+                    canvasDataUrl: dataUrl
+                })
+            });
+
+            if (response.ok) {
+                alert('✓ Markup saved successfully!');
+            } else {
+                const error = await response.json();
+                alert('Error saving markup: ' + (error.error || 'Please try again.'));
+            }
+        } catch (error) {
+            console.error('Error saving annotation:', error);
+            alert('Error saving markup. Please try again.');
+        }
+    });
+
+    function updateToolButtons(activeTool) {
+        document.getElementById('penTool')?.classList.toggle('tool-active', activeTool === 'pen');
+        document.getElementById('eraserTool')?.classList.toggle('tool-active', activeTool === 'eraser');
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', initializeDrawingCanvas);
 </script>

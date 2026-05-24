@@ -1673,3 +1673,67 @@ h2 svg,
     border-top: 2px solid #e0e0e0;
     font-weight: 600;
 }
+
+/* Drawing Canvas Styles */
+#drawingContainer {
+    max-width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#pdfCanvas, #drawingCanvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+#drawingCanvas {
+    touch-action: none !important;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tool-btn {
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tool-btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.tool-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tool-active {
+    border: 3px solid #fff !important;
+    box-shadow: 0 0 0 2px #333 !important;
+}
+
+@media (max-width: 768px) {
+    #toolBar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #toolBar > div {
+        width: 100%;
+    }
+
+    .tool-btn {
+        padding: 10px 14px !important;
+        font-size: 14px !important;
+        width: 100%;
+        text-align: center;
+    }
+
+    #drawingCanvas {
+        cursor: pointer;
+    }
+}
