@@ -197,32 +197,35 @@
 
     // Create canvas overlay for drawing
     function initCanvas() {
+        console.log('initCanvas called');
         // Remove any existing canvas
         const existing = document.getElementById('drawingCanvas');
         if (existing) existing.remove();
 
-        // Get the displayed size of the image
-        const rect = img.getBoundingClientRect();
-        const width = img.width || rect.width || 800;
-        const height = img.height || rect.height || 600;
+        // Get container dimensions
+        const containerRect = container.getBoundingClientRect();
+        const width = Math.max(img.offsetWidth, containerRect.width, 600);
+        const height = Math.max(img.offsetHeight, containerRect.height, 400);
+
+        console.log('Creating canvas with dimensions:', width, 'x', height);
+        console.log('Image size:', img.offsetWidth, 'x', img.offsetHeight);
 
         canvas = document.createElement('canvas');
         canvas.id = 'drawingCanvas';
         canvas.width = width;
         canvas.height = height;
         canvas.style.position = 'absolute';
-        canvas.style.top = '0px';
-        canvas.style.left = '0px';
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
         canvas.style.cursor = 'crosshair';
-        canvas.style.zIndex = '999';
+        canvas.style.zIndex = '10';
         canvas.style.backgroundColor = 'transparent';
-        canvas.style.border = '1px solid rgba(0,0,0,0.1)';
 
         container.appendChild(canvas);
         ctx = canvas.getContext('2d');
-        console.log('Canvas initialized:', width, 'x', height);
+        console.log('✓ Canvas initialized and added to DOM');
     }
 
     // Prevent selection and drag
@@ -235,15 +238,11 @@
     document.getElementById('penTool').style.border = '2px solid #2d7a2d';
     document.getElementById('eraserTool').style.border = '2px solid transparent';
 
-    // Initialize canvas when DOM is ready
-    setTimeout(() => {
-        if (img.complete || img.naturalWidth > 0) {
-            initCanvas();
-        } else {
-            img.addEventListener('load', initCanvas);
-            img.addEventListener('error', () => console.error('Image failed to load'));
-        }
-    }, 100);
+    // Initialize canvas after page load
+    window.addEventListener('load', () => {
+        console.log('Page loaded, initializing canvas');
+        setTimeout(initCanvas, 500);
+    });
 
     // Zoom functionality
     function updateZoom() {
