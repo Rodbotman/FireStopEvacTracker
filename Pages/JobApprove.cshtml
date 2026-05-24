@@ -179,17 +179,40 @@
         </div>
     </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/annotorious/3.0.0/annotorious.min.js"></script>
-
 <script>
-    let anno = null;
+    let canvas = null;
+    let ctx = null;
+    let isDrawing = false;
     let currentColor = '#FF0000';
     let currentTool = 'pen';
     let zoomLevel = 1;
+    let drawingHistory = [];
+
     const img = document.getElementById('diagramImage');
     const container = document.getElementById('drawingContainer');
 
-    // Prevent selection and drag on image (don't prevent mousedown - Annotorious needs it)
+    // Create canvas overlay for drawing
+    function initCanvas() {
+        // Remove any existing canvas
+        const existing = document.getElementById('drawingCanvas');
+        if (existing) existing.remove();
+
+        canvas = document.createElement('canvas');
+        canvas.id = 'drawingCanvas';
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.cursor = 'crosshair';
+        canvas.style.zIndex = '10';
+
+        container.style.position = 'relative';
+        container.appendChild(canvas);
+        ctx = canvas.getContext('2d');
+    }
+
+    // Prevent selection and drag
     img.addEventListener('dragstart', (e) => e.preventDefault());
     img.addEventListener('selectstart', (e) => e.preventDefault());
     container.addEventListener('dragstart', (e) => e.preventDefault());
@@ -199,34 +222,19 @@
     document.getElementById('penTool').style.border = '2px solid #2d7a2d';
     document.getElementById('eraserTool').style.border = '2px solid transparent';
 
-    // Initialize Annotorious with retry logic
-    function initAnnotorious() {
-        if (typeof Annotorious === 'undefined') {
-            console.warn('Annotorious not loaded, retrying...');
-            setTimeout(initAnnotorious, 500);
-            return;
-        }
-
-        anno = Annotorious.init({
-            image: img,
-            tools: ['freehand'],
-            drawingEnabled: true,
-            disableEditor: false,
-            autoSave: false
-        });
-
-        // Set freehand as active tool
-        if (anno) {
-            anno.setDrawingTool('freehand');
-        }
+    // Initialize on image load
+    if (img.complete) {
+        initCanvas();
+    } else {
+        img.addEventListener('load', initCanvas);
     }
-
-    window.addEventListener('load', initAnnotorious);
 
     // Zoom functionality
     function updateZoom() {
         img.style.transform = `scale(${zoomLevel})`;
+        canvas.style.transform = `scale(${zoomLevel})`;
         img.style.transformOrigin = 'top center';
+        canvas.style.transformOrigin = 'top center';
     }
 
     document.getElementById('zoomInBtn')?.addEventListener('click', (e) => {
@@ -288,21 +296,17 @@
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            currentColor = btn.dataset.color;
+            if (currentTool !== 'eraser') {
+                currentColor = btn.dataset.color;
 
-            // Remove selected state from all color buttons
-            document.querySelectorAll('.color-btn').forEach(b => {
-                b.style.border = '2px solid #999';
-            });
-
-            // Add selected state to clicked button
-            btn.style.border = '3px solid #333';
-            btn.classList.add('color-btn-selected');
-
-            if (anno) {
-                anno.setAuthInfo({
-                    user: 'reviewer'
+                // Remove selected state from all color buttons
+                document.querySelectorAll('.color-btn').forEach(b => {
+                    b.style.border = '2px solid #999';
                 });
+
+                // Add selected state to clicked button
+                btn.style.border = '3px solid #333';
+                btn.classList.add('color-btn-selected');
             }
         });
     });
@@ -311,48 +315,73 @@
     document.getElementById('penTool')?.addEventListener('click', (e) => {
         e.preventDefault();
         currentTool = 'pen';
-
-        if (anno) {
-            anno.setDrawingTool('freehand');
-        }
-
-        // Update tool button visuals
         document.getElementById('penTool').style.border = '2px solid #2d7a2d';
         document.getElementById('eraserTool').style.border = '2px solid transparent';
     });
 
-    // Eraser tool - removes annotations on click
+    // Eraser tool
     document.getElementById('eraserTool')?.addEventListener('click', (e) => {
         e.preventDefault();
         currentTool = 'eraser';
-
-        // Disable drawing mode when eraser is active
-        if (anno) {
-            anno.setDrawingTool(null);
-        }
-
-        // Update tool button visuals
         document.getElementById('penTool').style.border = '2px solid transparent';
         document.getElementById('eraserTool').style.border = '2px solid #333';
     });
 
-    // When eraser is active, clicking removes the last annotation
-    img.addEventListener('click', (e) => {
-        if (currentTool === 'eraser' && anno) {
-            const annotations = anno.getAnnotations();
-            if (annotations.length > 0) {
-                anno.removeAnnotation(annotations[annotations.length - 1]);
-            }
+    // Canvas drawing
+    canvas?.addEventListener('mousedown', (e) => {
+        if (!ctx) return;
+        isDrawing = true;
+        drawingHistory.push(canvas.toDataURL());
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / zoomLevel;
+        const y = (e.clientY - rect.top) / zoomLevel;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    });
+
+    canvas?.addEventListener('mousemove', (e) => {
+        if (!isDrawing || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / zoomLevel;
+        const y = (e.clientY - rect.top) / zoomLevel;
+
+        if (currentTool === 'eraser') {
+            ctx.clearRect(x - 10, y - 10, 20, 20);
+        } else {
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineTo(x, y);
+            ctx.stroke();
         }
-    }, true);
+    });
+
+    canvas?.addEventListener('mouseup', () => {
+        isDrawing = false;
+        ctx?.closePath();
+    });
+
+    canvas?.addEventListener('mouseleave', () => {
+        isDrawing = false;
+        ctx?.closePath();
+    });
 
     // Undo button
     document.getElementById('undoBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        if (anno) {
-            const annotations = anno.getAnnotations();
-            if (annotations.length > 0) {
-                anno.removeAnnotation(annotations[annotations.length - 1]);
+        if (drawingHistory.length > 0) {
+            drawingHistory.pop();
+            if (drawingHistory.length > 0) {
+                const imgData = new Image();
+                imgData.src = drawingHistory[drawingHistory.length - 1];
+                imgData.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(imgData, 0, 0);
+                };
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
     });
@@ -360,8 +389,9 @@
     // Clear button
     document.getElementById('clearBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        if (confirm('Clear all drawings?') && anno) {
-            anno.getAnnotations().forEach(a => anno.removeAnnotation(a));
+        if (confirm('Clear all drawings?')) {
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+            drawingHistory = [];
         }
     });
 
@@ -376,22 +406,15 @@
         }
 
         try {
-            // Capture image with annotations using html2canvas
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-            script.onload = async () => {
-                const canvas = await html2canvas(img);
-                const res = await fetch('/api/jobs/save-annotation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jobApprovalId: parseInt(approvalId),
-                        canvasDataUrl: canvas.toDataURL('image/png')
-                    })
-                });
-                alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
-            };
-            document.head.appendChild(script);
+            const res = await fetch('/api/jobs/save-annotation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jobApprovalId: parseInt(approvalId),
+                    canvasDataUrl: canvas.toDataURL('image/png')
+                })
+            });
+            alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
         } catch(err) {
             alert('Error: ' + err.message);
         }
