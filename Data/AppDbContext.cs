@@ -58,6 +58,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<JobAnnotation>(entity =>
         {
+            entity.ToTable("JobAnnotation");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CanvasDataUrl).IsRequired();
         });
