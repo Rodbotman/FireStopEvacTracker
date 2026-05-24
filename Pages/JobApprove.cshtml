@@ -52,8 +52,8 @@
                 <div class="pdf-section">
                     <p style="margin-bottom: 10px;">📄 Review & Markup Diagram:</p>
 
-                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; max-height: 600px;" data-approval-id="@(Model.Approval?.Id ?? 0)">
-                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; display: block; transition: transform 0.3s ease;" />
+                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; max-height: 600px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" data-approval-id="@(Model.Approval?.Id ?? 0)">
+                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; display: block; transition: transform 0.3s ease;" />
                     </div>
 
                     <div id="toolBar" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; margin-top: 15px;">
@@ -188,6 +188,15 @@
     let zoomLevel = 1;
     const img = document.getElementById('diagramImage');
     const container = document.getElementById('drawingContainer');
+
+    // Prevent selection and drag on image
+    img.addEventListener('dragstart', (e) => e.preventDefault());
+    img.addEventListener('selectstart', (e) => e.preventDefault());
+    img.addEventListener('mousedown', (e) => {
+        if (e.button === 0) e.preventDefault();
+    });
+    container.addEventListener('dragstart', (e) => e.preventDefault());
+    container.addEventListener('selectstart', (e) => e.preventDefault());
 
     // Initialize Annotorious
     window.addEventListener('load', () => {
