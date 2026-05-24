@@ -53,7 +53,7 @@
                     <p style="margin-bottom: 10px;">📄 Review & Markup Diagram:</p>
 
                     <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; display: block; width: 100%;" data-approval-id="@(Model.Approval?.Id ?? 0)">
-                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" style="display: block; width: 100%; height: auto; border-radius: 8px;" />
+                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="display: block; width: 100%; height: auto; border-radius: 8px; user-select: none;" />
                         <canvas id="drawingCanvas" style="position: absolute; top: 0; left: 0; cursor: crosshair; border-radius: 8px; display: none; z-index: 10; pointer-events: auto;"></canvas>
                     </div>
 
