@@ -199,8 +199,14 @@
     document.getElementById('penTool').style.border = '2px solid #2d7a2d';
     document.getElementById('eraserTool').style.border = '2px solid transparent';
 
-    // Initialize Annotorious
-    window.addEventListener('load', () => {
+    // Initialize Annotorious with retry logic
+    function initAnnotorious() {
+        if (typeof Annotorious === 'undefined') {
+            console.warn('Annotorious not loaded, retrying...');
+            setTimeout(initAnnotorious, 500);
+            return;
+        }
+
         anno = Annotorious.init({
             image: img,
             tools: ['freehand'],
@@ -213,7 +219,9 @@
         if (anno) {
             anno.setDrawingTool('freehand');
         }
-    });
+    }
+
+    window.addEventListener('load', initAnnotorious);
 
     // Zoom functionality
     function updateZoom() {
