@@ -199,13 +199,15 @@
 
         canvas = document.createElement('canvas');
         canvas.id = 'drawingCanvas';
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
         canvas.style.position = 'absolute';
         canvas.style.top = '0';
         canvas.style.left = '0';
         canvas.style.cursor = 'crosshair';
-        canvas.style.zIndex = '10';
+        canvas.style.zIndex = '1000';
+        canvas.style.backgroundColor = 'transparent';
+        canvas.style.display = 'block';
 
         container.style.position = 'relative';
         container.appendChild(canvas);
