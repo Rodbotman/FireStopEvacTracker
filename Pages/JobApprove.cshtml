@@ -189,12 +189,9 @@
     const img = document.getElementById('diagramImage');
     const container = document.getElementById('drawingContainer');
 
-    // Prevent selection and drag on image
+    // Prevent selection and drag on image (don't prevent mousedown - Annotorious needs it)
     img.addEventListener('dragstart', (e) => e.preventDefault());
     img.addEventListener('selectstart', (e) => e.preventDefault());
-    img.addEventListener('mousedown', (e) => {
-        if (e.button === 0) e.preventDefault();
-    });
     container.addEventListener('dragstart', (e) => e.preventDefault());
     container.addEventListener('selectstart', (e) => e.preventDefault());
 
