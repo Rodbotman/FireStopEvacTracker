@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace FireStopEvacTracker.Services;
@@ -38,7 +39,57 @@ public class PdfStorageService
         await pdfFile.CopyToAsync(stream);
 
         var relativePath = $"/uploads/{safeJobName}/{fileName}";
+
+        // Convert first page to PNG for markup preview
+        _ = ConvertPdfToImageAsync(fullPath, fileName);
+
         return (fileName, relativePath);
+    }
+
+    private async Task<string?> ConvertPdfToImageAsync(string pdfFullPath, string pdfFileName)
+    {
+        try
+        {
+            var imageFileName = Path.GetFileNameWithoutExtension(pdfFileName) + ".png";
+            var imageFullPath = Path.Combine(Path.GetDirectoryName(pdfFullPath)!, imageFileName);
+
+            // Use ImageMagick convert command (must be installed on system)
+            // Format: convert input.pdf[0] output.png (converts first page only)
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "convert",
+                    Arguments = $"\"{pdfFullPath}[0]\" -density 150 -quality 85 \"{imageFullPath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode == 0 && File.Exists(imageFullPath))
+                return imageFileName;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"PDF to image conversion failed: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    public string? GetPreviewImagePath(string? pdfPath)
+    {
+        if (string.IsNullOrWhiteSpace(pdfPath))
+            return null;
+
+        var imagePath = Path.ChangeExtension(pdfPath, ".png");
+        var fullImagePath = Path.Combine(_environment.WebRootPath, imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+        return File.Exists(fullImagePath) ? imagePath : null;
     }
 
     public void DeletePdfIfExists(string? relativePath)
