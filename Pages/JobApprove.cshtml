@@ -187,6 +187,10 @@
     let currentTool = 'pen';
     let zoomLevel = 1;
     let drawingHistory = [];
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let panOffset = { x: 0, y: 0 };
+    let isSpacePressed = false;
 
     const img = document.getElementById('diagramImage');
     const container = document.getElementById('drawingContainer');
@@ -292,13 +296,58 @@
         setTimeout(initCanvas, 500);
     });
 
-    // Zoom functionality
+    // Zoom and pan functionality
     function updateZoom() {
-        img.style.transform = `scale(${zoomLevel})`;
-        canvas.style.transform = `scale(${zoomLevel})`;
+        img.style.transform = `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`;
+        if (canvas) {
+            canvas.style.transform = `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`;
+        }
         img.style.transformOrigin = 'top center';
-        canvas.style.transformOrigin = 'top center';
+        if (canvas) canvas.style.transformOrigin = 'top center';
     }
+
+    // Spacebar key tracking for pan mode
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            isSpacePressed = true;
+            container.style.cursor = 'grab';
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+            isSpacePressed = false;
+            container.style.cursor = 'default';
+            isPanning = false;
+        }
+    });
+
+    // Pan with spacebar + drag
+    container.addEventListener('mousedown', (e) => {
+        if (isSpacePressed && zoomLevel > 1) {
+            isPanning = true;
+            panStart = { x: e.clientX, y: e.clientY };
+            container.style.cursor = 'grabbing';
+        }
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (isPanning && isSpacePressed) {
+            const deltaX = (e.clientX - panStart.x) / zoomLevel;
+            const deltaY = (e.clientY - panStart.y) / zoomLevel;
+            panOffset.x += deltaX;
+            panOffset.y += deltaY;
+            panStart = { x: e.clientX, y: e.clientY };
+            updateZoom();
+        }
+    });
+
+    container.addEventListener('mouseup', () => {
+        isPanning = false;
+        if (isSpacePressed) {
+            container.style.cursor = 'grab';
+        }
+    });
 
     document.getElementById('zoomInBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -315,6 +364,7 @@
     document.getElementById('zoomResetBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         zoomLevel = 1;
+        panOffset = { x: 0, y: 0 };
         updateZoom();
     });
 
