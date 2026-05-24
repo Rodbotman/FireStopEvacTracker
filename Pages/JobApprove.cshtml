@@ -61,9 +61,10 @@
                         <button type="button" id="zoomOutBtn" class="tool-btn" title="Zoom Out" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🔍- Zoom Out</button>
                         <button type="button" id="zoomResetBtn" class="tool-btn" title="Reset Zoom" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">↺ Reset</button>
                         <div style="border-left: 1px solid #ccc; height: 24px; margin: 0 4px;"></div>
-                        <button type="button" id="penTool" class="tool-btn tool-active" title="Draw" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Draw</button>
+                        <button type="button" id="penTool" class="tool-btn tool-active" title="Draw" style="background: #4CAF50; color: white; border: 2px solid #2d7a2d; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Draw</button>
+                        <button type="button" id="eraserTool" class="tool-btn" title="Erase" style="background: #FF5722; color: white; border: 2px solid transparent; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🧹 Erase</button>
                         <div style="display: flex; gap: 4px; border-left: 1px solid #ccc; padding-left: 6px;">
-                            <button type="button" class="color-btn" data-color="#FF0000" style="background: #FF0000; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Red"></button>
+                            <button type="button" class="color-btn color-btn-selected" data-color="#FF0000" style="background: #FF0000; width: 24px; height: 24px; border: 3px solid #333; border-radius: 3px; cursor: pointer;" title="Red"></button>
                             <button type="button" class="color-btn" data-color="#0000FF" style="background: #0000FF; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Blue"></button>
                             <button type="button" class="color-btn" data-color="#00AA00" style="background: #00AA00; width: 24px; height: 24px; border: 2px solid #999; border-radius: 3px; cursor: pointer;" title="Green"></button>
                         </div>
@@ -183,6 +184,7 @@
 <script>
     let anno = null;
     let currentColor = '#FF0000';
+    let currentTool = 'pen';
     let zoomLevel = 1;
     const img = document.getElementById('diagramImage');
     const container = document.getElementById('drawingContainer');
@@ -269,6 +271,16 @@
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             currentColor = btn.dataset.color;
+
+            // Remove selected state from all color buttons
+            document.querySelectorAll('.color-btn').forEach(b => {
+                b.style.border = '2px solid #999';
+            });
+
+            // Add selected state to clicked button
+            btn.style.border = '3px solid #333';
+            btn.classList.add('color-btn-selected');
+
             if (anno) {
                 anno.setAuthInfo({
                     user: 'reviewer'
@@ -277,13 +289,32 @@
         });
     });
 
-    // Draw tool
+    // Draw tool (Pen)
     document.getElementById('penTool')?.addEventListener('click', (e) => {
         e.preventDefault();
+        currentTool = 'pen';
+
         if (anno) {
             anno.setDrawingTool('freehand');
-            document.getElementById('penTool').classList.add('tool-active');
         }
+
+        // Update tool button visuals
+        document.getElementById('penTool').style.borderColor = '#2d7a2d';
+        document.getElementById('eraserTool').style.borderColor = 'transparent';
+    });
+
+    // Eraser tool
+    document.getElementById('eraserTool')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        currentTool = 'eraser';
+
+        if (anno) {
+            anno.setDrawingTool('freehand');
+        }
+
+        // Update tool button visuals
+        document.getElementById('penTool').style.borderColor = 'transparent';
+        document.getElementById('eraserTool').style.borderColor = '#333';
     });
 
     // Undo button
