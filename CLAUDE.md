@@ -13,16 +13,43 @@ FireStop Evac Tracker is an ASP.NET Core Razor Pages application for managing ev
 
 ---
 
+## 🚨 CRITICAL: Production Database Safety
+
+**MANDATORY RULE: Before every production deploy, backup the database locally.**
+
+**Procedure:**
+```bash
+# 1. On droplet, backup production database
+scp -i ~/.ssh/id_ed25519 root@134.199.146.192:/var/www/firestop/data/firestop_evac_tracker.db \
+    ./backups/firestop_evac_tracker_$(date +%Y%m%d_%H%M%S).db
+
+# 2. Verify backup exists locally
+ls -lh ./backups/firestop_evac_tracker_*.db | tail -1
+
+# 3. Then proceed with production deploy
+```
+
+**Why:** Production data is irreplaceable. If something goes wrong during deploy, we can restore from the backup.
+
+**NEVER:**
+- Delete production database without explicit approval
+- Overwrite production without a backup
+- Apply staging-only fixes to production data
+- Assume there are automated backups (verify first)
+
+---
+
 ## Deployment Workflow (MANDATORY)
 
 ### ✅ Correct Order
 
-1. **Develop locally** on `main` branch
-2. **Push patches to `staging` branch first** (never directly to main)
-3. **Deploy staging:** `cd /var/www/firestop-staging && docker-compose up -d --build`
-4. **Test on staging:** http://134.199.146.192:3001
-5. **After sign-off,** merge `staging` → `main` on GitHub
-6. **Deploy prod:** (with RAM/container precautions — see Gotchas below)
+1. **Backup production database** (see CRITICAL section above)
+2. **Develop locally** on `main` branch
+3. **Push patches to `staging` branch first** (never directly to main)
+4. **Deploy staging:** `cd /var/www/firestop-staging && docker-compose up -d --build`
+5. **Test on staging:** http://134.199.146.192:3001
+6. **After sign-off,** merge `staging` → `main` on GitHub
+7. **Deploy prod:** (with RAM/container precautions — see Gotchas below)
 
 ### ❌ Never Do This
 
@@ -30,6 +57,7 @@ FireStop Evac Tracker is an ASP.NET Core Razor Pages application for managing ev
 - Use `docker-compose up -d` without removing old containers first
 - Rebuild prod without stopping staging (RAM exhaustion)
 - Enable/start Nginx (Caddy owns ports 80/443)
+- Delete production database for any reason without backup & approval
 
 **Why:** `main` branch is what prod pulls from. Staging-only work on main silently arms the next prod deploy with untested code. Branch isolation prevents this.
 
@@ -149,6 +177,11 @@ curl http://localhost:3001/
 ### Prod Deploy (Full Sequence)
 
 ```bash
+# 0. BACKUP PRODUCTION DATABASE FIRST (MANDATORY)
+scp -i ~/.ssh/id_ed25519 root@134.199.146.192:/var/www/firestop/data/firestop_evac_tracker.db \
+    ./backups/firestop_evac_tracker_$(date +%Y%m%d_%H%M%S).db
+ls -lh ./backups/firestop_evac_tracker_*.db | tail -1  # Verify backup created
+
 # 1. On droplet — stop staging to free RAM
 cd /var/www/firestop-staging
 docker-compose stop
@@ -189,7 +222,7 @@ Clients can mark up evacuation diagrams before approval.
 3. **Persistence:** Annotations saved as base64 PNG in `JobAnnotations` table
 
 ### Database
-- **Table:** `JobAnnotations` (FK to `JobApprovals`)
+- **Table:** `JobAnnotation` (singular — maps to `JobAnnotations` DbSet with `.ToTable("JobAnnotation")`)
 - **Fields:** `Id`, `JobApprovalId`, `CanvasDataUrl` (base64 PNG), `CreatedAt`
 - **API:** `POST /api/jobs/save-annotation`
 
@@ -234,7 +267,7 @@ free -m        # Memory usage
 docker stats   # Container stats
 ```
 
-### Database Backup
+### Database Backup (Manual)
 ```bash
 cp /var/www/firestop/data/firestop_evac_tracker.db \
    /var/www/firestop/backups/backup_$(date +%s).db
@@ -254,6 +287,7 @@ ssh -i ~/.ssh/id_ed25519 root@134.199.146.192
 **Staging URL:** http://134.199.146.192:3001  
 **SSH Key:** ~/.ssh/id_ed25519 (no passphrase)  
 **GitHub Repo:** https://github.com/Rodbotman/FireStopEvacTracker.git  
+**Local Backups:** `./backups/firestop_evac_tracker_*.db`
 
 ---
 
@@ -264,7 +298,7 @@ ssh -i ~/.ssh/id_ed25519 root@134.199.146.192
 - [ ] Firewall enabled (SSH 22, HTTP 80, HTTPS 443)
 - [ ] SSL/HTTPS enabled (Caddy)
 - [ ] Nginx is disabled
-- [ ] Regular backups enabled
+- [ ] Regular backups enabled (local and/or automated)
 - [ ] Default credentials changed (if any)
 
 ---
@@ -284,10 +318,11 @@ ssh -i ~/.ssh/id_ed25519 root@134.199.146.192
 ## Notes for Future Sessions
 
 1. **Separate prod/staging dirs:** Never cd into one directory and switch branches. Each dir tracks its own branch.
-2. **Always test staging first:** New commits belong on `staging` initially, not `main`.
-3. **Prod rebuilds need precautions:** RAM stop + explicit container remove. This is not optional.
-4. **ImageMagick required:** Markup feature depends on it. Verify on deploy.
-5. **No Nginx:** Caddy is the reverse proxy. Nginx is disabled and should stay disabled.
+2. **Always backup before prod deploy:** This is non-negotiable. Data loss is catastrophic.
+3. **Always test staging first:** New commits belong on `staging` initially, not `main`.
+4. **Prod rebuilds need precautions:** RAM stop + explicit container remove + database backup. This is not optional.
+5. **ImageMagick required:** Markup feature depends on it. Verify on deploy.
+6. **No Nginx:** Caddy is the reverse proxy. Nginx is disabled and should stay disabled.
 
 ---
 
