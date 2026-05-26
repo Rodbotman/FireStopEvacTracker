@@ -69,7 +69,7 @@ public class PdfStorageService
                 var pageImageName = $"{baseName}_page_{pageNumber}.png";
                 var pageImagePath = Path.Combine(folder, pageImageName);
 
-                if (await RunConvertAsync($"\"{pdfFullPath}[{i}]\" -density 150 -quality 85 \"{pageImagePath}\""))
+                if (await RunConvertAsync($"-density 300 \"{pdfFullPath}[{i}]\" -quality 90 \"{pageImagePath}\""))
                     converted++;
             }
 
