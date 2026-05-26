@@ -232,6 +232,26 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
 
+    public async Task<IActionResult> OnPostDeleteAnnotationAsync(int id, int annotationId)
+    {
+        if (HttpContext.Session.GetInt32("UserId") == null)
+            return RedirectToPage("/Login");
+        if (HttpContext.Session.GetString("Role") != "Admin")
+            return Unauthorized();
+
+        var annotation = await _db.JobAnnotations.FindAsync(annotationId);
+        if (annotation is null)
+            return NotFound();
+
+        // Best-effort delete of the snapshot PNG on disk
+        _pdfStorage.DeleteSnapshotIfExists(annotation.SnapshotImagePath);
+
+        _db.JobAnnotations.Remove(annotation);
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage(new { id });
+    }
+
     public async Task<IActionResult> OnPostGenerateShareCodeAsync(int id)
     {
         var job = await _db.EvacJobs.FindAsync(id);

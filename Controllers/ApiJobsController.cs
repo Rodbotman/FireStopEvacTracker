@@ -18,8 +18,9 @@ public class JobsController : ControllerBase
     private readonly ReportService _reportService;
     private readonly IEmailService _emailService;
     private readonly EmailOptions _emailOptions;
+    private readonly PdfStorageService _pdfStorage;
 
-    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor, AuthService authService, ReportService reportService, IEmailService emailService, IOptions<EmailOptions> emailOptions)
+    public JobsController(AppDbContext db, IHttpContextAccessor httpContextAccessor, AuthService authService, ReportService reportService, IEmailService emailService, IOptions<EmailOptions> emailOptions, PdfStorageService pdfStorage)
     {
         _db = db;
         _httpContextAccessor = httpContextAccessor;
@@ -27,6 +28,7 @@ public class JobsController : ControllerBase
         _reportService = reportService;
         _emailService = emailService;
         _emailOptions = emailOptions.Value;
+        _pdfStorage = pdfStorage;
     }
 
     [HttpPost("toggle-billed/{id}")]
@@ -200,11 +202,16 @@ public class JobsController : ControllerBase
 
         var now = DateTime.UtcNow;
         var savedIds = new List<int>();
+        var pdfPath = approval.Job?.DraftPdfPath;
 
         foreach (var page in pages)
         {
             if (page.PageNumber < 1 || string.IsNullOrWhiteSpace(page.CanvasDataUrl))
                 continue;
+
+            // Snapshot the source page PNG so the admin sees the diagram as it
+            // looked at save time, even if the PDF gets replaced later.
+            var snapshotPath = await _pdfStorage.CreatePageSnapshotAsync(pdfPath, page.PageNumber, approval.Id);
 
             var existing = approval.Annotations.FirstOrDefault(a => a.PageNumber == page.PageNumber);
             if (existing is null)
@@ -214,6 +221,7 @@ public class JobsController : ControllerBase
                     JobApprovalId = approval.Id,
                     PageNumber = page.PageNumber,
                     CanvasDataUrl = page.CanvasDataUrl,
+                    SnapshotImagePath = snapshotPath,
                     CreatedAt = now
                 };
                 _db.JobAnnotations.Add(existing);
@@ -222,6 +230,8 @@ public class JobsController : ControllerBase
             else
             {
                 existing.CanvasDataUrl = page.CanvasDataUrl;
+                if (snapshotPath is not null)
+                    existing.SnapshotImagePath = snapshotPath;
                 existing.CreatedAt = now;
             }
             savedIds.Add(existing.PageNumber);

@@ -213,17 +213,37 @@
                                 }
                                 @if (markupPages.Count > 0)
                                 {
+                                    var isAdmin = HttpContext.Session.GetString("Role") == "Admin";
                                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
                                         <strong>📝 Client Markup (@markupPages.Count page@(markupPages.Count == 1 ? "" : "s")):</strong>
-                                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Annotations made by the client during approval (markup overlaid on the original diagram):</p>
+                                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Snapshot of the diagram as it was when the client marked it up (the diagram below will not change even if the job's PDF is later replaced):</p>
                                         @foreach (var ann in markupPages)
                                         {
-                                            // Pair this annotation with its source page PNG (1-indexed)
-                                            var pageImage = (ann.PageNumber >= 1 && ann.PageNumber <= Model.PageImagePaths.Count)
-                                                ? Model.PageImagePaths[ann.PageNumber - 1]
-                                                : null;
+                                            // Prefer the frozen snapshot; fall back to the current page PNG for
+                                            // annotations created before this field existed.
+                                            var pageImage = !string.IsNullOrEmpty(ann.SnapshotImagePath)
+                                                ? ann.SnapshotImagePath
+                                                : ((ann.PageNumber >= 1 && ann.PageNumber <= Model.PageImagePaths.Count)
+                                                    ? Model.PageImagePaths[ann.PageNumber - 1]
+                                                    : null);
                                             <div style="margin-bottom: 15px;">
-                                                <div style="font-size: 13px; color: #444; margin-bottom: 5px;">Page @ann.PageNumber</div>
+                                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                                                    <span style="font-size: 13px; color: #444;">
+                                                        Page @ann.PageNumber
+                                                        @if (string.IsNullOrEmpty(ann.SnapshotImagePath))
+                                                        {
+                                                            <span style="color: #c66; font-size: 11px; margin-left: 8px;">(legacy — no frozen snapshot)</span>
+                                                        }
+                                                    </span>
+                                                    @if (isAdmin)
+                                                    {
+                                                        <form method="post" asp-page-handler="DeleteAnnotation" style="display: inline; margin: 0;" onsubmit="return confirm('Delete this page of client markup? This cannot be undone.');">
+                                                            <input type="hidden" name="annotationId" value="@ann.Id" />
+                                                            <input type="hidden" name="id" value="@Model.Job!.Id" />
+                                                            <button type="submit" style="background: #f44336; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">🗑️ Delete markup</button>
+                                                        </form>
+                                                    }
+                                                </div>
                                                 <div style="position: relative; display: inline-block; max-width: 100%; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
                                                     @if (pageImage != null)
                                                     {

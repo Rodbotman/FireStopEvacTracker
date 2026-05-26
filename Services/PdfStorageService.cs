@@ -207,6 +207,70 @@ public class PdfStorageService
         return int.MaxValue;
     }
 
+    /// <summary>
+    /// Copies the source page PNG for a given PDF + page number into
+    /// /uploads/&lt;job&gt;/snapshots/&lt;approvalId&gt;_page_&lt;n&gt;.png and returns the
+    /// resulting /uploads/... relative path (or null if the source doesn't
+    /// exist). Overwrites an existing snapshot at the same name (idempotent
+    /// on re-save). Snapshots live in a subdirectory so the regular
+    /// DeletePdfIfExists glob doesn't sweep them up when a PDF is replaced.
+    /// </summary>
+    public async Task<string?> CreatePageSnapshotAsync(string? pdfRelativePath, int pageNumber, int approvalId)
+    {
+        if (string.IsNullOrWhiteSpace(pdfRelativePath) || pageNumber < 1 || approvalId <= 0)
+            return null;
+
+        // Make sure the page PNGs exist (lazy generation for pre-multipage uploads)
+        var pages = await GetPageImagePathsAsync(pdfRelativePath);
+        if (pageNumber > pages.Count)
+            return null;
+
+        var sourceRelative = pages[pageNumber - 1];
+        var sourceFull = Path.Combine(_environment.WebRootPath,
+            sourceRelative.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+        if (!File.Exists(sourceFull))
+            return null;
+
+        var pdfFolderRelative = pdfRelativePath.Substring(0, pdfRelativePath.LastIndexOf('/'));
+        var snapshotsFolderRelative = $"{pdfFolderRelative}/snapshots";
+        var snapshotsFolderFull = Path.Combine(_environment.WebRootPath,
+            snapshotsFolderRelative.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(snapshotsFolderFull);
+
+        var snapshotName = $"{approvalId}_page_{pageNumber}.png";
+        var snapshotFull = Path.Combine(snapshotsFolderFull, snapshotName);
+
+        try
+        {
+            File.Copy(sourceFull, snapshotFull, overwrite: true);
+            return $"{snapshotsFolderRelative}/{snapshotName}";
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Snapshot copy failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Deletes the snapshot PNG referenced by a JobAnnotation (best-effort).</summary>
+    public void DeleteSnapshotIfExists(string? snapshotRelativePath)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotRelativePath))
+            return;
+        try
+        {
+            var fullPath = Path.Combine(_environment.WebRootPath,
+                snapshotRelativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(fullPath))
+                File.Delete(fullPath);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Snapshot delete failed: {ex.Message}");
+        }
+    }
+
     public string? GetPreviewImagePath(string? pdfPath)
     {
         if (string.IsNullOrWhiteSpace(pdfPath))

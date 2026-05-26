@@ -14,6 +14,13 @@ public class JobAnnotation
     [Required]
     public string CanvasDataUrl { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Relative path to a snapshot copy of the source diagram page PNG taken
+    /// at save time. Lets the admin see what the client was looking at when
+    /// they made the markup, even if the job's PDF gets replaced later.
+    /// </summary>
+    public string? SnapshotImagePath { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public JobApproval JobApproval { get; set; } = null!;
