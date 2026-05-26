@@ -1,257 +1,178 @@
-# DigitalOcean Deployment Guide - FireStop Evac Tracker
+# DEPLOYMENT.md — Fresh Droplet Bootstrap
 
-## Cheapest Option: $4-6/month Droplet
+> **For day-to-day deploys, read `CLAUDE.md`.** This file is only for spinning up a **new** droplet from scratch (replacement, disaster recovery, second region).
 
-### Prerequisites
-
-1. DigitalOcean account (https://digitalocean.com)
-2. Git installed on your local machine
-3. Docker & Docker Compose knowledge (optional but helpful)
+The live droplet (`134.199.146.192`) is already set up per the procedure below. Use this only if you're building another one.
 
 ---
 
-## Step-by-Step Deployment
+## Target setup
 
-### 1. Create a DigitalOcean Droplet
+The droplet ends up with:
+- Ubuntu 24.04 LTS (or 22.04)
+- Docker + docker-compose v1.29.2 (already known-working — see the v1 recreate gotcha in CLAUDE.md)
+- **Caddy** as reverse proxy on ports 80 + 443 (HTTPS auto-cert via Let's Encrypt)
+- 2 GB swapfile at `/swapfile` (961 MB RAM is too tight without it)
+- ImageMagick (PDF→PNG for the markup feature)
+- Two app working dirs side-by-side:
+  - `/var/www/firestop` (prod, branch `main`, container exposes 5000)
+  - `/var/www/firestop-staging` (staging, branch `staging`, container exposes 3001)
 
-**Recommended Configuration (Cheapest Viable):**
+**Do NOT install Nginx.** Earlier versions of this doc said to — that was wrong. Nginx fights Caddy for port 80. If Nginx is already installed on a fresh image, stop and disable it (`systemctl stop nginx && systemctl disable nginx`).
 
-- **Plan**: Basic - $6/month (1GB RAM, 1 vCPU, 25GB SSD)
-  - _Note: $4/month option has only 512MB RAM - may struggle with .NET_
-- **OS**: Ubuntu 22.04 LTS (x64)
-- **Region**: Choose closest to your users
-- **Authentication**: SSH key (recommended over password)
-- **Hostname**: `firestop-evac-tracker`
+---
 
-### 2. Connect to Your Droplet
+## 1. Provision the droplet
+
+- DigitalOcean Basic plan, 1 GB RAM minimum (we run on 961 MB — anything smaller will OOM).
+- Ubuntu 24.04 LTS, region closest to users (Sydney for AU).
+- SSH key auth (paste your local `~/.ssh/id_ed25519.pub` into the DO console).
+- DNS: point `firestopevacs.sureprosoftware.com.au` A record at the droplet's IP. Caddy needs this resolving before it can issue certs.
+
+## 2. Base packages + swap
 
 ```bash
-# SSH into your droplet
-ssh root@YOUR_DROPLET_IP
+ssh root@<NEW_IP>
 
-# Update system packages
 apt update && apt upgrade -y
+apt install -y docker.io docker-compose imagemagick git
 
-# Install Docker & Docker Compose
-apt install docker.io docker-compose -y
-
-# Add current user to docker group (optional, avoids sudo)
-usermod -aG docker $USER
+# Swap: 2 GB at /swapfile
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+free -m   # confirm Swap shows ~2048
 ```
 
-### 3. Deploy Your Application
+## 3. Caddy (reverse proxy)
 
 ```bash
-# Create app directory
-mkdir -p /var/www/firestop
-cd /var/www/firestop
+apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install -y caddy
 
-# Clone your repository (or upload files)
-git clone https://github.com/YOUR_USERNAME/FireStopEvacTracker.git .
-
-# Start the application
-docker-compose up -d
-
-# Check if running
-docker-compose ps
-
-# View logs
-docker-compose logs -f app
-```
-
-### 4. Setup Nginx as Reverse Proxy (Optional but Recommended)
-
-```bash
-# Install Nginx
-apt install nginx -y
-
-# Create Nginx config
-cat > /etc/nginx/sites-available/default << 'EOF'
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection keep-alive;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
+# Caddyfile
+cat > /etc/caddy/Caddyfile << 'EOF'
+firestopevacs.sureprosoftware.com.au, www.firestopevacs.sureprosoftware.com.au {
+    reverse_proxy localhost:5000
+    encode gzip
 }
 EOF
 
-# Enable Nginx
-systemctl restart nginx
-systemctl enable nginx
+systemctl restart caddy
+systemctl status caddy   # must be active (running)
+
+# Confirm Nginx isn't competing
+systemctl is-enabled nginx 2>/dev/null   # disabled (or "Failed to get unit file state" if not installed)
 ```
 
-### 5. Setup SSL/HTTPS (Free with Let's Encrypt)
+## 4. Clone repos into two working dirs
 
 ```bash
-# Install Certbot
-apt install certbot python3-certbot-nginx -y
+# Prod
+mkdir -p /var/www/firestop && cd /var/www/firestop
+git clone https://github.com/Rodbotman/FireStopEvacTracker.git .
+git checkout main
 
-# Get certificate
-certbot --nginx -d yourdomain.com
-
-# Auto-renewal setup (automatic with certbot)
-systemctl enable certbot.timer
+# Staging
+mkdir -p /var/www/firestop-staging && cd /var/www/firestop-staging
+git clone https://github.com/Rodbotman/FireStopEvacTracker.git .
+git checkout staging
 ```
 
-### 6. Database Backup Setup
+## 5. docker-compose.yml on each side
+
+The repo's `docker-compose.yml` maps port `80:5000` which **breaks Caddy** — do NOT use it directly. On each droplet dir, write a local compose file with the correct port mapping.
+
+**Prod** — `/var/www/firestop/docker-compose.yml`:
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/firestop_evac_tracker.db
+      - TZ=Australia/Sydney
+      - Email__PostmarkServerToken=${POSTMARK_SERVER_TOKEN:-}
+      - Email__FromAddress=${EMAIL_FROM_ADDRESS:-}
+      - Email__FromName=${EMAIL_FROM_NAME:-FireStop Evac Tracker}
+      - Email__AppBaseUrl=${APP_BASE_URL:-}
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/wwwroot/uploads
+      - ./dataprotection:/root/.aspnet/DataProtection-Keys
+    restart: unless-stopped
+```
+
+**Staging** — `/var/www/firestop-staging/docker-compose.yml`:
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3001:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/firestop_evac_tracker.db
+      - TZ=Australia/Sydney
+      - Email__PostmarkServerToken=${POSTMARK_SERVER_TOKEN:-}
+      - Email__FromAddress=${EMAIL_FROM_ADDRESS:-}
+      - Email__FromName=${EMAIL_FROM_NAME:-FireStop Evac Tracker (staging)}
+      - Email__AppBaseUrl=${APP_BASE_URL:-}
+    volumes:
+      - ./data-staging:/app/data
+      - ./uploads-staging:/app/wwwroot/uploads
+      - ./dataprotection-staging:/root/.aspnet/DataProtection-Keys
+    restart: unless-stopped
+```
+
+## 6. .env files (Postmark)
 
 ```bash
-# Create backup script
-mkdir -p /var/www/firestop/backups
-
-cat > /var/www/firestop/backup.sh << 'EOF'
-#!/bin/bash
-BACKUP_DIR="/var/www/firestop/backups"
-DATE=$(date +%Y%m%d_%H%M%S)
-cp /var/www/firestop/data/firestop_evac_tracker.db $BACKUP_DIR/backup_$DATE.db
-# Keep only last 7 backups
-ls -t $BACKUP_DIR/backup_*.db | tail -n +8 | xargs rm -f
+# Prod
+cat > /var/www/firestop/.env << 'EOF'
+POSTMARK_SERVER_TOKEN=<paste-from-postmark>
+EMAIL_FROM_ADDRESS=noreply@sureprosoftware.com.au
+EMAIL_FROM_NAME=FireStop Evac Tracker
+APP_BASE_URL=https://firestopevacs.sureprosoftware.com.au
 EOF
+chmod 600 /var/www/firestop/.env
 
-chmod +x /var/www/firestop/backup.sh
-
-# Add to cron for daily backups
-echo "0 2 * * * /var/www/firestop/backup.sh" | crontab -
+# Staging — same but APP_BASE_URL=http://134.199.146.192:3001
 ```
 
----
+The `EMAIL_FROM_ADDRESS` must be a verified Sender Signature on the Postmark account with DKIM/SPF on the domain.
 
-## Cost Breakdown
-
-| Service            | Cost          | Notes                            |
-| ------------------ | ------------- | -------------------------------- |
-| Droplet (Basic)    | $6/month      | 1GB RAM, 1 vCPU, 25GB SSD        |
-| Bandwidth          | Included      | 1TB/month included               |
-| Backups (Optional) | +$1.20/month  | 20% of droplet cost              |
-| Domain (Optional)  | ~$10/year     | From any registrar               |
-| **Total**          | **~$6/month** | No SSL cost (Let's Encrypt free) |
-
----
-
-## Management Commands
+## 7. First build
 
 ```bash
-# SSH into droplet
-ssh root@YOUR_DROPLET_IP
+cd /var/www/firestop && docker-compose up -d --build app
+cd /var/www/firestop-staging && docker-compose up -d --build
 
-# Go to app directory
-cd /var/www/firestop
-
-# View logs
-docker-compose logs -f app
-
-# Restart app
-docker-compose restart
-
-# Stop app
-docker-compose down
-
-# Update code and redeploy
-git pull
-docker-compose up -d --build
-
-# Check disk usage
-df -h
-
-# Check memory usage
-free -m
-
-# Backup database
-cp data/firestop_evac_tracker.db backups/backup_$(date +%s).db
+curl -sI http://localhost:5000/    # prod (proxied by Caddy)
+curl -sI http://localhost:3001/    # staging
+curl -sI https://firestopevacs.sureprosoftware.com.au/   # full HTTPS edge
 ```
 
----
-
-## Alternative: DigitalOcean App Platform
-
-**Pros:**
-
-- Automatic deployment from Git
-- Built-in SSL
-- Automatic scaling
-- Easier management
-
-**Cons:**
-
-- More expensive (~$12-20/month minimum)
-- Less customization
-
-**Cost:** $12/month base + compute units (~$0.0000148 per hour)
-
----
-
-## Troubleshooting
-
-**App won't start:**
+## 8. Firewall
 
 ```bash
-docker-compose logs app
-docker-compose down
-docker-compose up -d --build
-```
-
-**Out of memory:**
-
-- Consider upgrading to $12/month droplet (2GB RAM)
-- Check: `docker stats`
-
-**Database locked:**
-
-- Ensure only one app instance running
-- Check: `lsof /var/www/firestop/data/firestop_evac_tracker.db`
-
-**SSL certificate issues:**
-
-- Renew manually: `certbot renew --force-renewal`
-- Check: `certbot certificates`
-
----
-
-## Post-Deployment
-
-1. **Update DNS** to point to your Droplet IP
-2. **Test Login** with demo accounts (admin/admin123)
-3. **Enable Firewall** in DigitalOcean dashboard:
-   - Allow SSH (22)
-   - Allow HTTP (80)
-   - Allow HTTPS (443)
-4. **Enable Backups** in DigitalOcean dashboard
-5. **Monitor** via DigitalOcean dashboard or set up alerts
-
----
-
-## Security Checklist
-
-- [ ] SSH key authentication enabled
-- [ ] Root login disabled
-- [ ] Firewall enabled and configured
-- [ ] SSL/HTTPS enabled
-- [ ] Regular backups enabled
-- [ ] Update password for demo users
-- [ ] Add real users via `/admin` if implemented
-- [ ] Enable automatic security updates
-
-```bash
-# Enable automatic security updates
-apt install unattended-upgrades -y
-dpkg-reconfigure -plow unattended-upgrades
+ufw allow OpenSSH
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 3001/tcp   # staging (no SSL)
+ufw enable
 ```
 
 ---
 
-## Support & Further Help
+## After bootstrap
 
-- **DigitalOcean Docs:** https://docs.digitalocean.com
-- **.NET Docker:** https://hub.docker.com/_/microsoft-dotnet
-- **Nginx:** https://nginx.org/en/docs/
+Day-to-day operations (deploys, backups, troubleshooting, Postmark token rotation) are documented in `CLAUDE.md`. Stop reading this file; go there.

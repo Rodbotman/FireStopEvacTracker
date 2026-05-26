@@ -1,334 +1,277 @@
 # FireStop Evac Tracker — Project Guidelines
 
+**Single source of truth.** All operational rules (Git workflow, DB safety, deployment, Postmark, gotchas) live here. If something contradicts this file, this file wins.
+
 ## Overview
 
-FireStop Evac Tracker is an ASP.NET Core Razor Pages application for managing evacuation diagram jobs. It runs on DigitalOcean (961MB RAM droplet) with separate prod and staging environments.
+ASP.NET Core 8 Razor Pages app for managing evacuation diagram jobs. Hosted on a single 961 MB DigitalOcean droplet running both prod and staging side-by-side.
 
-**Key Tech Stack:**
-- ASP.NET Core 8 (Razor Pages)
-- SQLite database (Docker-persisted)
-- Docker Compose v1.29.2 (Python)
-- Caddy reverse proxy (HTTPS termination)
-- ImageMagick (PDF → PNG conversion)
+**Tech stack:** ASP.NET Core 8 · SQLite · Docker Compose v1.29.2 · Caddy (HTTPS) · ImageMagick (PDF→PNG) · Postmark (email)
 
 ---
 
-## 🚨 CRITICAL: Production Database Safety
+## Environments
 
-**MANDATORY RULE: Before every production deploy, backup the database locally.**
+| | Prod | Staging |
+|---|---|---|
+| URL | https://firestopevacs.sureprosoftware.com.au | http://134.199.146.192:3001 |
+| Droplet dir | `/var/www/firestop` | `/var/www/firestop-staging` |
+| Git branch | `main` | `staging` |
+| Compose file | `docker-compose.yml` | `docker-compose.yml` (both droplets use plain `docker-compose.yml`; staging's lives only on the droplet — not in the repo) |
+| Service name | `app` | `app` |
+| Container | `firestop_app_1` | `firestop-staging_app_1` |
+| Host port | 5000 (Caddy proxies 80/443 → 5000) | 3001 (no SSL) |
+| Data volumes | `./data`, `./uploads`, `./dataprotection` | `./data-staging`, `./uploads-staging`, `./dataprotection-staging` |
+| `.env` location | `/var/www/firestop/.env` (Postmark) | `/var/www/firestop-staging/.env` (Postmark) |
 
-**Procedure:**
+**Droplet:** `134.199.146.192` (root, SSH key `~/.ssh/id_ed25519`, no passphrase)
+**Repo:** https://github.com/Rodbotman/FireStopEvacTracker.git
+**Specs:** 961 MB RAM, 24 GB disk, 2 GB swap at `/swapfile`
+
+---
+
+## 🚨 Database Safety (CRITICAL)
+
+**Rule:** Backup prod DB before every prod deploy. No exceptions.
+
+**Procedure (from local repo root):**
 ```bash
-# 1. On droplet, backup production database
-scp -i ~/.ssh/id_ed25519 root@134.199.146.192:/var/www/firestop/data/firestop_evac_tracker.db \
-    ./backups/firestop_evac_tracker_$(date +%Y%m%d_%H%M%S).db
-
-# 2. Verify backup exists locally
-ls -lh ./backups/firestop_evac_tracker_*.db | tail -1
-
-# 3. Then proceed with production deploy
+bash ./backup-db.sh
+# Pulls /var/www/firestop/data/firestop_evac_tracker.db via scp to ./backups/
+# Keeps last 7 backups; deletes older ones automatically
 ```
 
-**Why:** Production data is irreplaceable. If something goes wrong during deploy, we can restore from the backup.
+Backups are **manual only** — no cron on droplet, no DO snapshots assumed. Verify the backup file exists locally before continuing the deploy.
 
-**NEVER:**
-- Delete production database without explicit approval
-- Overwrite production without a backup
-- Apply staging-only fixes to production data
-- Assume there are automated backups (verify first)
+**Never:**
+- Delete prod DB without explicit user approval
+- Overwrite prod data without a fresh backup
+- Apply staging-only fixes directly to prod DB
+- Run `EnsureDeleted` / destructive EF migrations on prod
+
+**Restore:** `bash ./restore-db.sh <backup-file>` (script exists; verify path).
 
 ---
 
-## Deployment Workflow (MANDATORY)
+## Git Workflow
 
-### ✅ Correct Order
+**Rule:** Develop locally on the `staging` branch. Push to staging. Test. **Ask the user before merging to `main`.** Only then deploy prod.
 
-1. **Backup production database** (see CRITICAL section above)
-2. **Develop locally** on `main` branch
-3. **Push patches to `staging` branch first** (never directly to main)
-4. **Deploy staging:** `cd /var/www/firestop-staging && docker-compose up -d --build`
-5. **Test on staging:** http://134.199.146.192:3001
-6. **After sign-off,** merge `staging` → `main` on GitHub
-7. **Deploy prod:** (with RAM/container precautions — see Gotchas below)
+### Standard cycle
+1. `git checkout staging` (be on staging locally — never main during dev cycles)
+2. Make changes, commit on `staging`
+3. `git push origin staging` → triggers / unblocks staging deploy
+4. Deploy staging (see below), ask user to test on http://134.199.146.192:3001
+5. **Wait for user sign-off.** Don't merge to main yet.
+6. After user says "merge to main" / "deploy prod" / equivalent: `git push origin staging:main`
+7. Run prod deploy
 
-### ❌ Never Do This
+**Why:** `main` is what prod pulls from. Keeping work on `staging` until sign-off means `main` only ever contains tested, approved code. If you push to `main` prematurely, the next prod deploy silently ships untested code.
 
-- Push untested code to `main` then deploy prod directly
-- Use `docker-compose up -d` without removing old containers first
-- Rebuild prod without stopping staging (RAM exhaustion)
-- Enable/start Nginx (Caddy owns ports 80/443)
-- Delete production database for any reason without backup & approval
+**If you accidentally commit on `main`:** `git branch -f staging main` then `git reset --hard HEAD~N` on `main` (work is preserved on `staging`).
 
-**Why:** `main` branch is what prod pulls from. Staging-only work on main silently arms the next prod deploy with untested code. Branch isolation prevents this.
-
----
-
-## Directory Layout (Droplet)
-
-```
-/var/www/firestop/              → main branch → prod container (port 5000)
-  ├── data/                     → SQLite DB (bind-mounted)
-  ├── uploads/                  → PDF and PNG files
-  └── docker-compose.yml        → prod config
-
-/var/www/firestop-staging/      → staging branch → staging container (port 3001)
-  ├── data-staging/             → staging DB
-  ├── uploads-staging/          → staging uploads
-  └── docker-compose.yml        → staging config (port 3001)
-```
-
-**Key:** Separate directories with separate branches. Never share a working tree.
+### Never
+- Push directly to `main` during a dev/test cycle
+- `git push origin main main:staging` (the anti-pattern — pushes untested code to main first)
+- Force-push to `main` without explicit user approval
+- Skip hooks (`--no-verify`) unless explicitly asked
 
 ---
 
-## Prod Rebuild Gotchas (3 Failure Modes)
-
-### Gotcha #1: RAM Exhaustion
-
-**Problem:** 961MB total RAM. Two .NET containers running (~300MB) + dotnet publish peak (~600–900MB) = swap thrashing.
-
-**Symptom:** SSH banner timeout, HTTPS goes down, droplet appears frozen.
-
-**Fix:** Always stop staging before rebuilding prod:
+## Deployment — Staging
 
 ```bash
 # On droplet
 cd /var/www/firestop-staging
-docker-compose stop
+git pull origin staging
 
-# Rebuild prod (in another SSH session)
-cd /var/www/firestop
-docker ps -a --filter "name=firestop_app" -q | xargs -r docker rm -f
-docker-compose up -d --build
-
-# Restart staging after prod is healthy
-cd /var/www/firestop-staging
-docker-compose start
-```
-
-**Remember:** 2GB swapfile exists at `/swapfile` but is slow. Stopping staging is the cheaper guardrail.
-
----
-
-### Gotcha #2: docker-compose v1 Container Recreate Bug
-
-**Problem:** docker-compose v1.29.2 on the droplet has two bugs when recreating containers:
-- **Bug A:** Image SHA change → prompts "Continue? [yN]" and aborts under non-interactive stdin
-- **Bug B:** Even env-var-only changes crash with `KeyError: 'ContainerConfig'` midway through recreate, leaving prod with **no running app container** (Caddy returns 502)
-
-**Symptom:** Prod container down or orphaned `<hash>_firestop_app_1` exists.
-
-**Fix:** Never rely on `docker-compose up -d` to recreate. Always pre-remove:
-
-```bash
-docker ps -a --filter "name=firestop_app" -q | xargs -r docker rm -f
-docker-compose up -d app
-```
-
-Brief downtime (~5–10s) is unavoidable but bounded. Data loss is impossible (all volumes are host bind-mounts, not Docker-managed).
-
-**Sanity check:** SHA-256 of DB before and after should match (unless DB migration):
-```bash
-sha256sum /var/www/firestop/data/firestop_evac_tracker.db
-```
-
----
-
-### Gotcha #3: Caddy vs Nginx Port Race
-
-**Problem:** Nginx is installed but obsolete. On boot, if enabled, it wins the race for port 80 before Caddy starts. Caddy fails with `bind: address already in use`, taking HTTPS down without affecting the app itself.
-
-**Fix:** Keep Nginx stopped and disabled:
-
-```bash
-systemctl is-enabled nginx  # Should return: disabled
-systemctl status caddy      # Should return: active (running)
-```
-
-**Canonical prod health check:** External HTTPS probe (not internal `curl localhost:5000`).
-
----
-
-## Deployment Commands
-
-### Staging Deploy
-
-```bash
-# On droplet
-cd /var/www/firestop-staging
-
-# Pull staging branch
-git fetch origin staging
-git checkout staging
-
-# Rebuild container
+# Pre-remove container (docker-compose v1 recreate bug — see Gotcha #2)
 docker ps -a --filter "name=firestop-staging" -q | xargs -r docker rm -f
+
+# Rebuild and start
 docker-compose up -d --build
 
 # Verify
-docker-compose logs -f app  # Ctrl-C to exit
-curl http://localhost:3001/
+docker-compose logs app | tail -20
+curl -sI http://localhost:3001/ | head -1
 ```
 
 **Test URL:** http://134.199.146.192:3001
 
 ---
 
-### Prod Deploy (Full Sequence)
+## Deployment — Production
 
+**Pre-requisites (in order, no skipping):**
+1. Staging deployed and signed off by user
+2. `staging` merged into `main` on user's request (not before)
+3. Prod DB backed up locally (`bash ./backup-db.sh`)
+
+**Procedure:**
 ```bash
-# 0. BACKUP PRODUCTION DATABASE FIRST (MANDATORY)
-scp -i ~/.ssh/id_ed25519 root@134.199.146.192:/var/www/firestop/data/firestop_evac_tracker.db \
-    ./backups/firestop_evac_tracker_$(date +%Y%m%d_%H%M%S).db
-ls -lh ./backups/firestop_evac_tracker_*.db | tail -1  # Verify backup created
+# 0. Backup prod DB locally first
+bash ./backup-db.sh
+ls -lh ./backups/firestop_evac_tracker_*.db | tail -1  # verify backup exists
 
-# 1. On droplet — stop staging to free RAM
-cd /var/www/firestop-staging
-docker-compose stop
+# 1. On droplet — stop staging to free RAM (Gotcha #1)
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop-staging && docker-compose stop"
 
-# 2. Rebuild prod
-cd /var/www/firestop
-git fetch origin main
-git checkout main
-git pull origin main
+# 2. Pull main on prod dir
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop && git fetch origin main && git checkout main && git pull origin main"
 
-# 3. Remove old container (gotcha #2)
-docker ps -a --filter "name=firestop_app" -q | xargs -r docker rm -f
+# 3. Pre-remove old container (Gotcha #2)
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "docker ps -a --filter 'name=firestop_app' -q | xargs -r docker rm -f"
 
 # 4. Rebuild and restart
-docker-compose up -d --build app
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop && docker-compose up -d --build app"
 
-# 5. Verify health
-docker-compose logs app
-curl https://firestopevacs.sureprosoftware.com.au/
+# 5. Verify health from outside (canonical check — Gotcha #3)
+curl -sI https://firestopevacs.sureprosoftware.com.au/ | head -1
 
-# 6. Restart staging (if successful)
-cd /var/www/firestop-staging
-docker-compose start
+# 6. Restart staging
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop-staging && docker-compose start"
 ```
 
-**Expected:** Prod HTTPS responds, staging comes back up.
+`deploy-prod.sh` automates this — but verify it matches the rules above before trusting it.
+
+### Prod Deploy Gotchas (3 known failure modes)
+
+**Gotcha #1 — RAM exhaustion.** 961 MB total. Two .NET containers + `dotnet publish` peak (600–900 MB) = swap-thrash, SSH banner timeout, droplet appears frozen. **Always stop staging before rebuilding prod.** Restart staging after prod is healthy.
+
+**Gotcha #2 — docker-compose v1 recreate bug.** v1.29.2 has two recreate bugs:
+- Image SHA change → prompts "Continue? [yN]" and aborts on non-interactive stdin
+- Env-var-only change → crashes with `KeyError: 'ContainerConfig'` mid-recreate, leaving prod with no app container (Caddy returns 502)
+
+**Always pre-remove the container** before `docker-compose up`. Data is safe — all volumes are bind mounts to host paths, not Docker-managed.
+
+**Gotcha #3 — Caddy vs nginx port race.** Nginx is installed but stopped + disabled. If it auto-starts (e.g. after reboot), it grabs port 80 before Caddy and HTTPS goes down. Verify after reboots:
+```bash
+systemctl is-enabled nginx  # must be: disabled
+systemctl status caddy      # must be: active (running)
+```
+
+**Canonical "is prod up" check:** External HTTPS probe (`curl -sI https://firestopevacs.sureprosoftware.com.au/`). Internal `curl localhost:5000` only confirms the app, not the edge.
+
+**Sanity check:** DB SHA-256 before/after deploy should match (unless a migration is being applied):
+```bash
+sha256sum /var/www/firestop/data/firestop_evac_tracker.db
+```
 
 ---
 
-## Feature: Pen & Eraser Markup (Latest)
+## Postmark / Email
 
-### Overview
-Clients can mark up evacuation diagrams before approval.
+Configured on **both prod and staging**. Each environment has its own `.env` file next to the compose file on the droplet (already in place — `chmod 600`, gitignored).
 
-### How It Works
-1. **PDF → PNG conversion:** Server-side ImageMagick converts first page of PDF to PNG on upload
-2. **Fabric.js drawing:** Client-side canvas overlay for pen, eraser, undo, clear
-3. **Persistence:** Annotations saved as base64 PNG in `JobAnnotations` table
+**Env vars** (see `.env.example`):
+```
+POSTMARK_SERVER_TOKEN=<token from Postmark "Server" page > API Tokens>
+EMAIL_FROM_ADDRESS=noreply@sureprosoftware.com.au
+EMAIL_FROM_NAME=FireStop Evac Tracker
+APP_BASE_URL=https://firestopevacs.sureprosoftware.com.au  # prod
+# Staging APP_BASE_URL=http://134.199.146.192:3001
+```
 
-### Database
-- **Table:** `JobAnnotation` (singular — maps to `JobAnnotations` DbSet with `.ToTable("JobAnnotation")`)
-- **Fields:** `Id`, `JobApprovalId`, `CanvasDataUrl` (base64 PNG), `CreatedAt`
-- **API:** `POST /api/jobs/save-annotation`
+`docker-compose.yml` reads these as `${POSTMARK_SERVER_TOKEN}` etc. and maps them to `Email__*` env vars consumed by `Services/PostmarkEmailService.cs`.
 
-### Dependencies
-- **ImageMagick:** Must be installed on droplet (`apt-get install imagemagick`)
-  ```bash
-  convert --version  # Verify: should be ImageMagick 6.9.x+
-  ```
+**Sender requirements:** The `EMAIL_FROM_ADDRESS` must be a verified Sender Signature on the Postmark account, and the sending domain must have DKIM/SPF configured.
 
-### Testing Checklist
-- [ ] PDF renders as image on JobApprove page
-- [ ] Pen tool draws with color selection (red/blue/green)
-- [ ] Eraser removes strokes
-- [ ] Undo works
-- [ ] Clear button works
-- [ ] Save Markup button saves to DB
-- [ ] Admin can see saved annotation in Details page
+**To rotate the token:**
+```bash
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192
+nano /var/www/firestop/.env          # update POSTMARK_SERVER_TOKEN
+cd /var/www/firestop
+docker ps -a --filter "name=firestop_app" -q | xargs -r docker rm -f
+docker-compose up -d app             # picks up new env on recreate
+```
+
+(Same procedure on `/var/www/firestop-staging/` for staging.)
+
+**Testing:** the app exposes `EmailController` for outbound test sends. Check `docker-compose logs app | grep -i postmark` after sending.
+
+---
+
+## Features
+
+### Pen & Eraser Markup (client approval page)
+
+Clients mark up evacuation diagrams via canvas overlay on `/JobApprove/{ShareCode}` before approving.
+
+**Pipeline:**
+1. On upload, server converts first page of PDF to PNG using ImageMagick (`PdfStorageService`).
+2. Client draws on HTML5 Canvas overlay positioned over the PNG.
+3. Tools: Draw (5 colors — red, blue, green, white, lighter grey `#D0D0D0`), Erase, Pan, Zoom In/Out/Reset, Undo, Clear, Save.
+4. On Save, canvas is serialized to base64 PNG and POSTed to `/api/jobs/save-annotation`.
+5. Stored in `JobAnnotation` table (DbSet `JobAnnotations`, mapped via `.ToTable("JobAnnotation")` — singular table name).
+
+**Schema:** `JobAnnotation { Id, JobApprovalId, CanvasDataUrl (base64 PNG), CreatedAt }`.
+
+**ImageMagick must be installed on droplet:** `apt-get install imagemagick` (verify with `convert --version`, expect 6.9.x+).
+
+**Manual PNG generation** (if a PDF was uploaded before ImageMagick was installed):
+```bash
+cd /var/www/firestop-staging/uploads/<JOB>/
+convert -density 150 "<file>.pdf[0]" "<file>.png"
+```
 
 ---
 
 ## Common Tasks
 
-### View Logs
 ```bash
-cd /var/www/firestop
-docker-compose logs -f app  # Prod
-# or
-cd /var/www/firestop-staging
-docker-compose logs -f app  # Staging
-```
+# View logs
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop && docker-compose logs -f app"   # prod
+# Staging: same with /var/www/firestop-staging
 
-### Restart App (Prod)
-```bash
-cd /var/www/firestop
-docker-compose restart
-```
+# Restart prod (no rebuild)
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "cd /var/www/firestop && docker-compose restart app"
 
-### Check Disk/Memory
-```bash
-df -h          # Disk usage
-free -m        # Memory usage
-docker stats   # Container stats
-```
+# Check droplet health
+ssh -i ~/.ssh/id_ed25519 root@134.199.146.192 \
+  "free -m; df -h /; docker stats --no-stream"
 
-### Database Backup (Manual)
-```bash
-cp /var/www/firestop/data/firestop_evac_tracker.db \
-   /var/www/firestop/backups/backup_$(date +%s).db
-```
-
-### SSH into Droplet
-```bash
+# SSH in
 ssh -i ~/.ssh/id_ed25519 root@134.199.146.192
 ```
 
 ---
 
-## Environment / Credentials
+## docker-compose.yml note
 
-**Droplet IP:** 134.199.146.192  
-**Prod URL:** https://firestopevacs.sureprosoftware.com.au  
-**Staging URL:** http://134.199.146.192:3001  
-**SSH Key:** ~/.ssh/id_ed25519 (no passphrase)  
-**GitHub Repo:** https://github.com/Rodbotman/FireStopEvacTracker.git  
-**Local Backups:** `./backups/firestop_evac_tracker_*.db`
-
----
-
-## Security Checklist
-
-- [ ] SSH key authentication enabled
-- [ ] Root login disabled
-- [ ] Firewall enabled (SSH 22, HTTP 80, HTTPS 443)
-- [ ] SSL/HTTPS enabled (Caddy)
-- [ ] Nginx is disabled
-- [ ] Regular backups enabled (local and/or automated)
-- [ ] Default credentials changed (if any)
+Repo's `docker-compose.yml` matches prod (`5000:5000`, Caddy proxies). Staging's compose lives only on the droplet at `/var/www/firestop-staging/docker-compose.yml` (port `3001:5000`) — it's not in the repo because both branches share the same `docker-compose.yml` file. **Don't change ports in the repo's compose file without re-checking the droplet** — they must stay in sync or prod will collide with Caddy on port 80.
 
 ---
 
 ## Troubleshooting
 
-| Issue | Check | Fix |
-|-------|-------|-----|
-| Prod returns 502 | `curl localhost:5000` | App crashed; check `docker-compose logs` |
-| Prod HTTPS unreachable but app runs | Caddy crashed | SSH check: `systemctl status caddy`; is Nginx enabled? |
-| App won't start | `docker-compose logs app` | DB locked? OOM? Check logs. |
-| Staging port conflict | `sudo ss -tulpn \| grep 3001` | Another service on 3001? Kill or reassign. |
-| Docker-compose recreate hangs | `free -m` | RAM exhausted? Stop staging and retry. |
+| Symptom | Check | Fix |
+|---|---|---|
+| Prod returns 502 | `ssh ... curl localhost:5000` | App crashed — `docker-compose logs app` |
+| Prod HTTPS down but app up | `systemctl status caddy` | Nginx grabbed port 80; `systemctl stop nginx && systemctl start caddy` |
+| App won't start | `docker-compose logs app` | DB locked? OOM? Missing migration? |
+| Build hangs mid-`dotnet publish` | `free -m` | RAM exhausted — stop staging, retry |
+| Container recreate hangs / 502 | `docker ps -a` | Orphaned container — pre-remove, retry |
+| Markup PDF not converting | `convert --version` on droplet | ImageMagick missing — `apt-get install imagemagick` |
+| Email not sending | `docker-compose logs app \| grep -i postmark` | Token missing/invalid; check `.env` |
 
 ---
 
 ## Notes for Future Sessions
 
-1. **Separate prod/staging dirs:** Never cd into one directory and switch branches. Each dir tracks its own branch.
-2. **Always backup before prod deploy:** This is non-negotiable. Data loss is catastrophic.
-3. **Always test staging first:** New commits belong on `staging` initially, not `main`.
-4. **Prod rebuilds need precautions:** RAM stop + explicit container remove + database backup. This is not optional.
-5. **ImageMagick required:** Markup feature depends on it. Verify on deploy.
-6. **No Nginx:** Caddy is the reverse proxy. Nginx is disabled and should stay disabled.
+1. **Local branch is `staging`.** Never start a dev cycle on `main`.
+2. **Backup before prod deploy** is non-negotiable.
+3. **Ask before merging to `main`.** User decides when staging is signed off.
+4. **Prod rebuild = stop staging + pre-remove container + backup.** Skipping any step has caused outages.
+5. **Caddy owns 80/443.** Keep nginx disabled.
+6. **ImageMagick** required for markup feature.
+7. **Postmark** configured per-environment via `.env` next to compose file.
+8. **`docker-compose.yml` ports must stay `5000:5000`** in the repo — anything else breaks prod's Caddy proxy.
 
----
-
-## Related
-
-- [DigitalOcean Deployment Guide](DEPLOYMENT.md) — generic DO setup
-- [README.md](README.md) — local dev setup
-
-Last updated: 2026-05-24
+Last updated: 2026-05-26
