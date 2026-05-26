@@ -67,7 +67,7 @@ public class DetailsModel : PageModel
             return NotFound();
 
         Approval = await _db.JobApprovals
-            .Include(a => a.Annotation)
+            .Include(a => a.Annotations)
             .FirstOrDefaultAsync(a => a.JobId == id);
 
         UpdateInput.Status = Job.Status;

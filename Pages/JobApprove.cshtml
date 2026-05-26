@@ -61,9 +61,28 @@
                 <div class="pdf-section">
                     <p style="margin-bottom: 10px;">📄 Review & Markup Diagram:</p>
 
+                    @{
+                        var initialPageSrc = Model.PageImagePaths.FirstOrDefault()
+                            ?? Model.Job.DraftPdfPath?.Replace(".pdf", ".png");
+                    }
                     <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; max-height: 600px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" data-approval-id="@(Model.Approval?.Id ?? 0)">
-                        <img id="diagramImage" src="@(Model.Job.DraftPdfPath?.Replace(".pdf", ".png"))" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; display: block; transition: transform 0.3s ease;" />
+                        <img id="diagramImage" src="@initialPageSrc" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; display: block; transition: transform 0.3s ease;" />
                     </div>
+
+                    @if (Model.PageImagePaths.Count > 1)
+                    {
+                        <div id="pageNavigator" style="display: flex; gap: 12px; align-items: center; justify-content: center; margin-bottom: 15px; padding: 8px; background: #f0f0f0; border-radius: 6px;">
+                            <button type="button" id="prevPageBtn" class="tool-btn" style="background: #555; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold;">‹ Prev</button>
+                            <span style="font-weight: bold;">Page <span id="currentPageNum">1</span> of @Model.PageImagePaths.Count</span>
+                            <div id="pageDots" style="display: flex; gap: 4px; font-size: 18px; line-height: 1;">
+                                @for (var i = 0; i < Model.PageImagePaths.Count; i++)
+                                {
+                                    <span class="page-dot" data-page="@(i + 1)" style="cursor: pointer; color: #999;" title="Go to page @(i + 1)">○</span>
+                                }
+                            </div>
+                            <button type="button" id="nextPageBtn" class="tool-btn" style="background: #555; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold;">Next ›</button>
+                        </div>
+                    }
 
                     <div id="toolBar" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; margin-top: 15px;">
                         <button type="button" id="zoomInBtn" class="tool-btn" title="Zoom In" style="background: #FF9800; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🔍+ Zoom In</button>
@@ -192,6 +211,18 @@
     </div>
 
 <script>
+    // Server-rendered data for multi-page markup
+    const diagramPages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PageImagePaths));
+    const initialAnnotations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AnnotationsByPage));
+
+    // Map<pageNumber, dataUrl> holding the current canvas snapshot for each page.
+    // Pre-populated from saved annotations so they restore when the page is shown.
+    const pageAnnotations = new Map();
+    for (const [k, v] of Object.entries(initialAnnotations || {})) {
+        pageAnnotations.set(parseInt(k, 10), v);
+    }
+
+    let currentPageIndex = 0; // 0-based; page number = currentPageIndex + 1
     let canvas = null;
     let ctx = null;
     let isDrawing = false;
@@ -213,7 +244,6 @@
 
     // Create canvas overlay for drawing
     function initCanvas() {
-        console.log('initCanvas called');
         // Remove any existing canvas
         const existing = document.getElementById('drawingCanvas');
         if (existing) existing.remove();
@@ -222,9 +252,6 @@
         const containerRect = container.getBoundingClientRect();
         const width = Math.max(img.offsetWidth, containerRect.width, 600);
         const height = Math.max(img.offsetHeight, containerRect.height, 400);
-
-        console.log('Creating canvas with dimensions:', width, 'x', height);
-        console.log('Image size:', img.offsetWidth, 'x', img.offsetHeight);
 
         canvas = document.createElement('canvas');
         canvas.id = 'drawingCanvas';
@@ -241,10 +268,73 @@
 
         container.appendChild(canvas);
         ctx = canvas.getContext('2d');
-        console.log('✓ Canvas initialized and added to DOM');
 
-        // Attach drawing event listeners AFTER canvas is created
         attachCanvasEvents();
+
+        // Restore saved annotation for the current page, if any
+        const pageNumber = currentPageIndex + 1;
+        const saved = pageAnnotations.get(pageNumber);
+        if (saved) {
+            restoreCanvasFromDataUrl(saved);
+        }
+        updatePageDots();
+    }
+
+    function restoreCanvasFromDataUrl(dataUrl) {
+        if (!ctx || !canvas) return;
+        const restoreImg = new Image();
+        restoreImg.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(restoreImg, 0, 0, canvas.width, canvas.height);
+        };
+        restoreImg.src = dataUrl;
+    }
+
+    function snapshotCurrentPage() {
+        if (!canvas) return;
+        const pageNumber = currentPageIndex + 1;
+        // Detect empty canvas — toDataURL of a transparent canvas is consistent, so
+        // check via getImageData for any non-transparent pixel.
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let hasMarkup = false;
+        for (let i = 3; i < imageData.length; i += 4) {
+            if (imageData[i] !== 0) { hasMarkup = true; break; }
+        }
+        if (hasMarkup) {
+            pageAnnotations.set(pageNumber, canvas.toDataURL('image/png'));
+        } else {
+            pageAnnotations.delete(pageNumber);
+        }
+        updatePageDots();
+    }
+
+    function loadPage(newIndex) {
+        if (newIndex < 0 || newIndex >= diagramPages.length) return;
+        if (newIndex === currentPageIndex) return;
+
+        snapshotCurrentPage();
+        drawingHistory = [];
+        currentPageIndex = newIndex;
+
+        const navLabel = document.getElementById('currentPageNum');
+        if (navLabel) navLabel.textContent = String(newIndex + 1);
+
+        img.onload = () => {
+            // Image's intrinsic size may have changed — re-init canvas to match
+            initCanvas();
+            img.onload = null;
+        };
+        img.src = diagramPages[newIndex];
+    }
+
+    function updatePageDots() {
+        document.querySelectorAll('.page-dot').forEach((dot) => {
+            const pageNum = parseInt(dot.dataset.page, 10);
+            const filled = pageAnnotations.has(pageNum);
+            dot.textContent = filled ? '●' : '○';
+            dot.style.color = filled ? '#2d7a2d' : '#999';
+            dot.style.fontWeight = (pageNum === currentPageIndex + 1) ? 'bold' : 'normal';
+        });
     }
 
     function attachCanvasEvents() {
@@ -454,16 +544,35 @@
         }
     });
 
-    // Clear button
+    // Clear button — clears only the current page
     document.getElementById('clearBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        if (confirm('Clear all drawings?')) {
+        if (confirm('Clear drawings on this page?')) {
             ctx?.clearRect(0, 0, canvas.width, canvas.height);
             drawingHistory = [];
+            pageAnnotations.delete(currentPageIndex + 1);
+            updatePageDots();
         }
     });
 
-    // Save button
+    // Page navigation
+    document.getElementById('prevPageBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadPage(currentPageIndex - 1);
+    });
+    document.getElementById('nextPageBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadPage(currentPageIndex + 1);
+    });
+    document.querySelectorAll('.page-dot').forEach((dot) => {
+        dot.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageNum = parseInt(dot.dataset.page, 10);
+            loadPage(pageNum - 1);
+        });
+    });
+
+    // Save button — sends all pages with markup as an array
     document.getElementById('saveAnnotationBtn')?.addEventListener('click', async (e) => {
         e.preventDefault();
         const approvalId = container?.dataset.approvalId;
@@ -473,16 +582,29 @@
             return;
         }
 
+        // Capture the current page before reading the map
+        snapshotCurrentPage();
+
+        if (pageAnnotations.size === 0) {
+            alert('Nothing to save — try drawing something first.');
+            return;
+        }
+
+        const pages = [];
+        for (const [pageNumber, canvasDataUrl] of pageAnnotations.entries()) {
+            pages.push({ pageNumber, canvasDataUrl });
+        }
+
         try {
             const res = await fetch('/api/jobs/save-annotation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     jobApprovalId: parseInt(approvalId),
-                    canvasDataUrl: canvas.toDataURL('image/png')
+                    pages
                 })
             });
-            alert(res.ok ? '✓ Markup saved!' : 'Error saving markup');
+            alert(res.ok ? `✓ Markup saved (${pages.length} page${pages.length === 1 ? '' : 's'})!` : 'Error saving markup');
         } catch(err) {
             alert('Error: ' + err.message);
         }

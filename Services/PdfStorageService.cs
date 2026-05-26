@@ -40,27 +40,104 @@ public class PdfStorageService
 
         var relativePath = $"/uploads/{safeJobName}/{fileName}";
 
-        // Convert first page to PNG for markup preview
-        _ = ConvertPdfToImageAsync(fullPath, fileName);
+        // Convert every page to PNG for markup preview (fire-and-forget)
+        _ = ConvertPdfToImagesAsync(fullPath, fileName);
 
         return (fileName, relativePath);
     }
 
-    private async Task<string?> ConvertPdfToImageAsync(string pdfFullPath, string pdfFileName)
+    /// <summary>
+    /// Converts every page of the PDF to a separate PNG named &lt;base&gt;_page_N.png
+    /// (1-indexed). Also writes &lt;base&gt;.png pointing at page 1 for backward
+    /// compatibility with code paths that still ask for the legacy single image.
+    /// </summary>
+    private async Task<int> ConvertPdfToImagesAsync(string pdfFullPath, string pdfFileName)
     {
         try
         {
-            var imageFileName = Path.GetFileNameWithoutExtension(pdfFileName) + ".png";
-            var imageFullPath = Path.Combine(Path.GetDirectoryName(pdfFullPath)!, imageFileName);
+            var pageCount = await GetPdfPageCountAsync(pdfFullPath);
+            if (pageCount <= 0)
+                return 0;
 
-            // Use ImageMagick convert command (must be installed on system)
-            // Format: convert input.pdf[0] output.png (converts first page only)
-            var process = new Process
+            var folder = Path.GetDirectoryName(pdfFullPath)!;
+            var baseName = Path.GetFileNameWithoutExtension(pdfFileName);
+            var converted = 0;
+
+            for (var i = 0; i < pageCount; i++)
+            {
+                var pageNumber = i + 1;
+                var pageImageName = $"{baseName}_page_{pageNumber}.png";
+                var pageImagePath = Path.Combine(folder, pageImageName);
+
+                if (await RunConvertAsync($"\"{pdfFullPath}[{i}]\" -density 150 -quality 85 \"{pageImagePath}\""))
+                    converted++;
+            }
+
+            // Backward-compat: <base>.png mirrors page 1
+            if (converted > 0)
+            {
+                var legacyPath = Path.Combine(folder, $"{baseName}.png");
+                var firstPagePath = Path.Combine(folder, $"{baseName}_page_1.png");
+                if (File.Exists(firstPagePath))
+                {
+                    try { File.Copy(firstPagePath, legacyPath, overwrite: true); }
+                    catch { /* best-effort */ }
+                }
+            }
+
+            return converted;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"PDF to image conversion failed: {ex.Message}");
+            return 0;
+        }
+    }
+
+    private static async Task<int> GetPdfPageCountAsync(string pdfFullPath)
+    {
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "identify",
+                    Arguments = $"-format \"%n\\n\" \"{pdfFullPath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            // `identify -format "%n\n"` prints the page count repeated once per page.
+            // Taking the first line gives the total.
+            var firstLine = stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+            if (int.TryParse(firstLine, out var count) && count > 0)
+                return count;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Page count detection failed: {ex.Message}");
+        }
+        return 0;
+    }
+
+    private static async Task<bool> RunConvertAsync(string arguments)
+    {
+        try
+        {
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "convert",
-                    Arguments = $"\"{pdfFullPath}[0]\" -density 150 -quality 85 \"{imageFullPath}\"",
+                    Arguments = arguments,
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     CreateNoWindow = true
@@ -69,16 +146,65 @@ public class PdfStorageService
 
             process.Start();
             await process.WaitForExitAsync();
-
-            if (process.ExitCode == 0 && File.Exists(imageFullPath))
-                return imageFileName;
+            return process.ExitCode == 0;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"PDF to image conversion failed: {ex.Message}");
+            Debug.WriteLine($"convert failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns the ordered list of relative PNG paths (one per page) for a given
+    /// PDF path. Lazily generates page PNGs from the source PDF if they don't
+    /// exist yet (handles pre-multipage uploads).
+    /// </summary>
+    public async Task<List<string>> GetPageImagePathsAsync(string? pdfRelativePath)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(pdfRelativePath))
+            return result;
+
+        var pdfFullPath = Path.Combine(_environment.WebRootPath,
+            pdfRelativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+        if (!File.Exists(pdfFullPath))
+            return result;
+
+        var folder = Path.GetDirectoryName(pdfFullPath)!;
+        var baseName = Path.GetFileNameWithoutExtension(pdfFullPath);
+        var pdfRelativeDir = pdfRelativePath.Substring(0, pdfRelativePath.LastIndexOf('/'));
+
+        // Look for existing _page_N.png files
+        var existing = Directory.GetFiles(folder, $"{baseName}_page_*.png")
+            .Select(p => Path.GetFileName(p))
+            .OrderBy(name => ExtractPageNumber(name, baseName))
+            .ToList();
+
+        if (existing.Count == 0)
+        {
+            // Lazy-generate for pre-multipage uploads (single-page legacy or no PNG yet)
+            await ConvertPdfToImagesAsync(pdfFullPath, Path.GetFileName(pdfFullPath));
+            existing = Directory.GetFiles(folder, $"{baseName}_page_*.png")
+                .Select(p => Path.GetFileName(p))
+                .OrderBy(name => ExtractPageNumber(name, baseName))
+                .ToList();
         }
 
-        return null;
+        foreach (var name in existing)
+            result.Add($"{pdfRelativeDir}/{name}");
+
+        return result;
+    }
+
+    private static int ExtractPageNumber(string fileName, string baseName)
+    {
+        var prefix = $"{baseName}_page_";
+        var withoutExt = Path.GetFileNameWithoutExtension(fileName);
+        if (withoutExt.StartsWith(prefix) && int.TryParse(withoutExt.Substring(prefix.Length), out var n))
+            return n;
+        return int.MaxValue;
     }
 
     public string? GetPreviewImagePath(string? pdfPath)
@@ -106,11 +232,21 @@ public class PdfStorageService
             {
                 File.Delete(fullPath);
             }
+
+            // Also delete generated PNG previews (legacy + per-page)
+            var folder = Path.GetDirectoryName(fullPath);
+            var baseName = Path.GetFileNameWithoutExtension(fullPath);
+            if (folder != null && Directory.Exists(folder))
+            {
+                foreach (var png in Directory.GetFiles(folder, $"{baseName}*.png"))
+                {
+                    try { File.Delete(png); } catch { /* best-effort */ }
+                }
+            }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Warning: Could not delete PDF file at {relativePath}: {ex.Message}");
-            // Don't throw - this is a best-effort cleanup operation
+            Debug.WriteLine($"Warning: Could not delete PDF file at {relativePath}: {ex.Message}");
         }
     }
 }

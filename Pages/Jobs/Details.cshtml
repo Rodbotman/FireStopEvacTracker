@@ -205,12 +205,24 @@
                                         @Model.Approval.ChangesRequired
                                     </div>
                                 }
-                                @if (Model.Approval.Annotation != null && !string.IsNullOrWhiteSpace(Model.Approval.Annotation.CanvasDataUrl))
+                                @{
+                                    var markupPages = Model.Approval.Annotations
+                                        .Where(a => !string.IsNullOrWhiteSpace(a.CanvasDataUrl))
+                                        .OrderBy(a => a.PageNumber)
+                                        .ToList();
+                                }
+                                @if (markupPages.Count > 0)
                                 {
                                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-                                        <strong>📝 Client Markup:</strong>
+                                        <strong>📝 Client Markup (@markupPages.Count page@(markupPages.Count == 1 ? "" : "s")):</strong>
                                         <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Annotations made by the client during approval:</p>
-                                        <img src="@Model.Approval.Annotation.CanvasDataUrl" alt="Client annotation markup" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px;" />
+                                        @foreach (var ann in markupPages)
+                                        {
+                                            <div style="margin-bottom: 15px;">
+                                                <div style="font-size: 13px; color: #444; margin-bottom: 5px;">Page @ann.PageNumber</div>
+                                                <img src="@ann.CanvasDataUrl" alt="Client markup page @ann.PageNumber" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+                                            </div>
+                                        }
                                     </div>
                                 }
                             </div>

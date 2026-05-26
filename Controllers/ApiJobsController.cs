@@ -170,36 +170,66 @@ public class JobsController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> SaveAnnotation([FromBody] SaveAnnotationRequest request)
     {
-        if (request?.JobApprovalId <= 0 || string.IsNullOrWhiteSpace(request?.CanvasDataUrl))
-            return BadRequest(new { error = "Invalid approval ID or annotation data" });
+        if (request is null || request.JobApprovalId <= 0)
+            return BadRequest(new { error = "Invalid approval ID" });
+
+        // Normalize to a list of pages. The endpoint accepts either the new shape
+        // ({ JobApprovalId, Pages: [{PageNumber, CanvasDataUrl}, ...] }) or the
+        // legacy single-page shape ({ JobApprovalId, CanvasDataUrl }) which is
+        // treated as page 1.
+        var pages = (request.Pages ?? new List<AnnotationPagePayload>()).ToList();
+        if (pages.Count == 0 && !string.IsNullOrWhiteSpace(request.CanvasDataUrl))
+        {
+            pages.Add(new AnnotationPagePayload
+            {
+                PageNumber = 1,
+                CanvasDataUrl = request.CanvasDataUrl
+            });
+        }
+
+        if (pages.Count == 0)
+            return BadRequest(new { error = "No annotation data provided" });
 
         var approval = await _db.JobApprovals
-            .Include(a => a.Annotation)
+            .Include(a => a.Annotations)
             .FirstOrDefaultAsync(a => a.Id == request.JobApprovalId);
 
         if (approval is null)
             return NotFound(new { error = "Approval not found" });
 
-        if (approval.Annotation is null)
+        var now = DateTime.UtcNow;
+        var savedIds = new List<int>();
+
+        foreach (var page in pages)
         {
-            approval.Annotation = new JobAnnotation
+            if (page.PageNumber < 1 || string.IsNullOrWhiteSpace(page.CanvasDataUrl))
+                continue;
+
+            var existing = approval.Annotations.FirstOrDefault(a => a.PageNumber == page.PageNumber);
+            if (existing is null)
             {
-                JobApprovalId = approval.Id,
-                CanvasDataUrl = request.CanvasDataUrl,
-                CreatedAt = DateTime.UtcNow
-            };
-            _db.JobAnnotations.Add(approval.Annotation);
-        }
-        else
-        {
-            approval.Annotation.CanvasDataUrl = request.CanvasDataUrl;
-            approval.Annotation.CreatedAt = DateTime.UtcNow;
+                existing = new JobAnnotation
+                {
+                    JobApprovalId = approval.Id,
+                    PageNumber = page.PageNumber,
+                    CanvasDataUrl = page.CanvasDataUrl,
+                    CreatedAt = now
+                };
+                _db.JobAnnotations.Add(existing);
+                approval.Annotations.Add(existing);
+            }
+            else
+            {
+                existing.CanvasDataUrl = page.CanvasDataUrl;
+                existing.CreatedAt = now;
+            }
+            savedIds.Add(existing.PageNumber);
         }
 
-        approval.UpdatedAt = DateTime.UtcNow;
+        approval.UpdatedAt = now;
         await _db.SaveChangesAsync();
 
-        return Ok(new { success = true, annotationId = approval.Annotation.Id });
+        return Ok(new { success = true, savedPages = savedIds });
     }
 
     [HttpGet("generate-status-report")]
@@ -243,5 +273,16 @@ public class SendToCustomerRequest
 public class SaveAnnotationRequest
 {
     public int JobApprovalId { get; set; }
+
+    // New multi-page shape
+    public List<AnnotationPagePayload>? Pages { get; set; }
+
+    // Legacy single-page shape (treated as page 1 when Pages is empty)
+    public string? CanvasDataUrl { get; set; }
+}
+
+public class AnnotationPagePayload
+{
+    public int PageNumber { get; set; }
     public string? CanvasDataUrl { get; set; }
 }

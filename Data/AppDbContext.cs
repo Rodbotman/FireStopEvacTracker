@@ -50,9 +50,9 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ClientEmail).HasMaxLength(255).IsRequired();
             entity.Property(e => e.ClientName).HasMaxLength(200).IsRequired();
-            entity.HasOne(a => a.Annotation)
+            entity.HasMany(a => a.Annotations)
                 .WithOne(an => an.JobApproval)
-                .HasForeignKey<JobAnnotation>(an => an.JobApprovalId)
+                .HasForeignKey(an => an.JobApprovalId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -61,6 +61,7 @@ public class AppDbContext : DbContext
             entity.ToTable("JobAnnotation");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CanvasDataUrl).IsRequired();
+            entity.HasIndex(e => new { e.JobApprovalId, e.PageNumber }).IsUnique();
         });
 
         modelBuilder.Entity<JobDocument>(entity =>

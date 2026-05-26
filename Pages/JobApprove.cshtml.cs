@@ -1,5 +1,6 @@
 using FireStopEvacTracker.Data;
 using FireStopEvacTracker.Models;
+using FireStopEvacTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -9,16 +10,24 @@ namespace FireStopEvacTracker.Pages;
 public class JobApproveModel : PageModel
 {
     private readonly AppDbContext _context;
+    private readonly PdfStorageService _pdfStorage;
 
-    public JobApproveModel(AppDbContext context)
+    public JobApproveModel(AppDbContext context, PdfStorageService pdfStorage)
     {
         _context = context;
+        _pdfStorage = pdfStorage;
     }
 
     public EvacJob? Job { get; set; }
     public JobApproval? Approval { get; set; }
     public string? ErrorMessage { get; set; }
     public bool IsApproved { get; set; }
+
+    /// <summary>Ordered list of /uploads/... PNG paths, one per page.</summary>
+    public List<string> PageImagePaths { get; set; } = new();
+
+    /// <summary>Existing annotations keyed by PageNumber (for restoring prior markup).</summary>
+    public Dictionary<int, string> AnnotationsByPage { get; set; } = new();
 
     [BindProperty]
     public bool? LayoutAccuracyApproved { get; set; }
@@ -58,7 +67,9 @@ public class JobApproveModel : PageModel
         }
 
         // Get or create approval record
-        Approval = await _context.JobApprovals.FirstOrDefaultAsync(a => a.JobId == Job.Id);
+        Approval = await _context.JobApprovals
+            .Include(a => a.Annotations)
+            .FirstOrDefaultAsync(a => a.JobId == Job.Id);
 
         if (Approval == null)
         {
@@ -80,7 +91,15 @@ public class JobApproveModel : PageModel
             ApproverName = Approval.ApproverName;
             ChangesRequired = Approval.ChangesRequired;
             IsApproved = Approval.IsApproved;
+
+            AnnotationsByPage = Approval.Annotations
+                .GroupBy(a => a.PageNumber)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.CreatedAt).First().CanvasDataUrl);
         }
+
+        // Load page images (generates them lazily if a pre-multipage PDF was uploaded)
+        if (Job.HasPdf)
+            PageImagePaths = await _pdfStorage.GetPageImagePathsAsync(Job.DraftPdfPath);
 
         return Page();
     }
