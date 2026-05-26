@@ -215,12 +215,26 @@
                                 {
                                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
                                         <strong>📝 Client Markup (@markupPages.Count page@(markupPages.Count == 1 ? "" : "s")):</strong>
-                                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Annotations made by the client during approval:</p>
+                                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Annotations made by the client during approval (markup overlaid on the original diagram):</p>
                                         @foreach (var ann in markupPages)
                                         {
+                                            // Pair this annotation with its source page PNG (1-indexed)
+                                            var pageImage = (ann.PageNumber >= 1 && ann.PageNumber <= Model.PageImagePaths.Count)
+                                                ? Model.PageImagePaths[ann.PageNumber - 1]
+                                                : null;
                                             <div style="margin-bottom: 15px;">
                                                 <div style="font-size: 13px; color: #444; margin-bottom: 5px;">Page @ann.PageNumber</div>
-                                                <img src="@ann.CanvasDataUrl" alt="Client markup page @ann.PageNumber" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+                                                <div style="position: relative; display: inline-block; max-width: 100%; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                                                    @if (pageImage != null)
+                                                    {
+                                                        <img src="@pageImage" alt="Diagram page @ann.PageNumber" style="display: block; max-width: 100%; height: auto;" />
+                                                        <img src="@ann.CanvasDataUrl" alt="Client markup page @ann.PageNumber" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="@ann.CanvasDataUrl" alt="Client markup page @ann.PageNumber" style="display: block; max-width: 100%; height: auto;" />
+                                                    }
+                                                </div>
                                             </div>
                                         }
                                     </div>

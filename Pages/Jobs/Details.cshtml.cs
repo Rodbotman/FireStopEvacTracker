@@ -21,6 +21,9 @@ public class DetailsModel : PageModel
     public EvacJob? Job { get; set; }
     public JobApproval? Approval { get; set; }
 
+    /// <summary>Ordered list of /uploads/... PNG paths for the source PDF, one per page.</summary>
+    public List<string> PageImagePaths { get; set; } = new();
+
     [BindProperty]
     public UpdateJobInput UpdateInput { get; set; } = new();
 
@@ -69,6 +72,9 @@ public class DetailsModel : PageModel
         Approval = await _db.JobApprovals
             .Include(a => a.Annotations)
             .FirstOrDefaultAsync(a => a.JobId == id);
+
+        if (Job.HasPdf)
+            PageImagePaths = await _pdfStorage.GetPageImagePathsAsync(Job.DraftPdfPath);
 
         UpdateInput.Status = Job.Status;
         UpdateInput.Notes = Job.Notes;
