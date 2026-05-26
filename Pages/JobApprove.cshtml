@@ -65,7 +65,7 @@
                         var initialPageSrc = Model.PageImagePaths.FirstOrDefault()
                             ?? Model.Job.DraftPdfPath?.Replace(".pdf", ".png");
                     }
-                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; max-height: 600px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" data-approval-id="@(Model.Approval?.Id ?? 0)">
+                    <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" data-approval-id="@(Model.Approval?.Id ?? 0)">
                         <img id="diagramImage" src="@initialPageSrc" alt="Evacuation diagram preview" draggable="false" style="width: 100%; height: auto; border-radius: 8px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; display: block; transition: transform 0.3s ease;" />
                     </div>
 
@@ -248,20 +248,22 @@
         const existing = document.getElementById('drawingCanvas');
         if (existing) existing.remove();
 
-        // Get container dimensions
-        const containerRect = container.getBoundingClientRect();
-        const width = Math.max(img.offsetWidth, containerRect.width, 600);
-        const height = Math.max(img.offsetHeight, containerRect.height, 400);
+        // Use the IMAGE's display dimensions for both the canvas's intrinsic
+        // size AND its CSS display size, so canvas pixels map 1:1 to image
+        // pixels (in display space). Aspect ratio matches the source PNG, so
+        // the saved data URL overlays correctly on the snapshot in Details.
+        const displayWidth = img.offsetWidth || 600;
+        const displayHeight = img.offsetHeight || 400;
 
         canvas = document.createElement('canvas');
         canvas.id = 'drawingCanvas';
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
         canvas.style.position = 'absolute';
         canvas.style.top = '0';
         canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
         canvas.style.cursor = 'crosshair';
         canvas.style.zIndex = '9999';
         canvas.style.backgroundColor = 'transparent';
