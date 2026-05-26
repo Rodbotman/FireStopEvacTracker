@@ -383,30 +383,6 @@
         }
     });
 
-    // Pan when zoomed
-    let isPanning = false;
-    let panStart = { x: 0, y: 0 };
-
-    container.addEventListener('mousedown', (e) => {
-        if (zoomLevel > 1 && e.button === 2) {
-            isPanning = true;
-            panStart = { x: e.clientX, y: e.clientY };
-        }
-    });
-
-    container.addEventListener('mousemove', (e) => {
-        if (isPanning) {
-            const dx = (e.clientX - panStart.x) / (zoomLevel * 100);
-            const dy = (e.clientY - panStart.y) / (zoomLevel * 100);
-            img.style.marginLeft = (dx) + 'px';
-            img.style.marginTop = (dy) + 'px';
-        }
-    });
-
-    container.addEventListener('mouseup', () => {
-        isPanning = false;
-    });
-
     // Color buttons
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
