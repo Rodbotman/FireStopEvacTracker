@@ -192,6 +192,7 @@ public class JobsController : ControllerBase
 
         var approval = await _db.JobApprovals
             .Include(a => a.Annotations)
+            .Include(a => a.Job)
             .FirstOrDefaultAsync(a => a.Id == request.JobApprovalId);
 
         if (approval is null)
@@ -227,9 +228,23 @@ public class JobsController : ControllerBase
         }
 
         approval.UpdatedAt = now;
+
+        // Flip job status to "Changes Submitted" so the FireStop team sees the
+        // client wants edits — but only if the job hasn't already been
+        // approved/completed (don't roll back a finalised job).
+        if (approval.Job is not null
+            && approval.Job.Status != JobStatus.Approved
+            && approval.Job.Status != JobStatus.Complete
+            && approval.Job.Status != JobStatus.ChangesSubmitted)
+        {
+            approval.Job.Status = JobStatus.ChangesSubmitted;
+            approval.Job.StatusUpdatedAt = now;
+            approval.Job.UpdatedAt = now;
+        }
+
         await _db.SaveChangesAsync();
 
-        return Ok(new { success = true, savedPages = savedIds });
+        return Ok(new { success = true, savedPages = savedIds, jobStatus = approval.Job?.Status });
     }
 
     [HttpGet("generate-status-report")]

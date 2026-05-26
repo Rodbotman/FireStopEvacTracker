@@ -89,6 +89,7 @@ public static class JobStatus
     public const string SentToOffice = "Sent to Office";
     public const string SentToCustomer = "Sent to Customer";
     public const string ChangesNeeded = "Changes Needed";
+    public const string ChangesSubmitted = "Changes Submitted";
     public const string Approved = "Approved";
     public const string ToPrint = "To Print";
     public const string Complete = "Complete";
@@ -100,6 +101,7 @@ public static class JobStatus
         SentToOffice,
         SentToCustomer,
         ChangesNeeded,
+        ChangesSubmitted,
         Approved,
         ToPrint,
         Complete

@@ -390,6 +390,10 @@ dd {
     background: #ff5722; /* Deep Orange/Red */
 }
 
+.status-pill.status-changes-submitted {
+    background: #800000; /* Maroon */
+}
+
 .status-pill.status-approved {
     background: #8bc34a; /* Light Green */
 }
