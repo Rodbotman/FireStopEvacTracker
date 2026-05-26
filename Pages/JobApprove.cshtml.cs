@@ -66,7 +66,10 @@ public class JobApproveModel : PageModel
             return Page();
         }
 
-        // Get or create approval record
+        // Get or create approval record. Persist immediately so the page has a
+        // real Approval.Id — the JS markup-save endpoint posts by approval ID
+        // and would otherwise fail with "Approval ID not found" before the
+        // user submits the checklist.
         Approval = await _context.JobApprovals
             .Include(a => a.Annotations)
             .FirstOrDefaultAsync(a => a.JobId == Job.Id);
@@ -80,6 +83,8 @@ public class JobApproveModel : PageModel
                 ClientEmail = "",
                 ApproverName = ""
             };
+            _context.JobApprovals.Add(Approval);
+            await _context.SaveChangesAsync();
         }
         else
         {
