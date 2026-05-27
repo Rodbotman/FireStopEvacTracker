@@ -270,6 +270,10 @@
         canvas.style.touchAction = 'none'; // disable browser scroll/zoom inside the canvas
         canvas.style.webkitUserSelect = 'none';
         canvas.style.userSelect = 'none';
+        // Match the image's transition so canvas + image animate in sync on
+        // button-driven zoom changes — otherwise the markup briefly drifts
+        // away from the diagram during the 0.3s animation and then resettles.
+        canvas.style.transition = 'transform 0.3s ease';
 
         container.appendChild(canvas);
         ctx = canvas.getContext('2d');
@@ -437,6 +441,10 @@
                 isPanning = false;
                 ctx?.closePath();
                 activeGesture = 'pinch';
+                // Suppress the smooth transition while pinching — we want each
+                // frame to track the fingers exactly, not lag 0.3s behind.
+                img.style.transition = 'none';
+                canvas.style.transition = 'none';
                 const [t1, t2] = e.touches;
                 pinchInitialDistance = touchDistance(t1, t2);
                 pinchInitialZoom = zoomLevel;
@@ -492,6 +500,9 @@
                 isPanning = false;
                 activeGesture = null;
                 ctx?.closePath();
+                // Re-enable smooth transition for button-driven zoom changes
+                img.style.transition = 'transform 0.3s ease';
+                canvas.style.transition = 'transform 0.3s ease';
             } else if (e.touches.length === 1 && activeGesture === 'pinch') {
                 // Drop pinch; keep the page idle until the user lifts and re-touches
                 activeGesture = null;
