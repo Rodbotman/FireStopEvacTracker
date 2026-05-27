@@ -379,10 +379,11 @@
             const { x, y } = eventToCanvasCoords(e);
 
             if (currentTool === 'eraser') {
-                ctx.clearRect(x - 10, y - 10, 20, 20);
+                const r = 10 / zoomLevel;
+                ctx.clearRect(x - r, y - r, r * 2, r * 2);
             } else {
                 ctx.strokeStyle = currentColor;
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 3 / zoomLevel; // keep stroke a constant on-screen thickness
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.lineTo(x, y);
@@ -479,10 +480,11 @@
                 } else if (activeGesture === 'draw' && isDrawing) {
                     const { x, y } = eventToCanvasCoords(t);
                     if (currentTool === 'eraser') {
-                        ctx.clearRect(x - 10, y - 10, 20, 20);
+                        const r = 10 / zoomLevel;
+                        ctx.clearRect(x - r, y - r, r * 2, r * 2);
                     } else {
                         ctx.strokeStyle = currentColor;
-                        ctx.lineWidth = 3;
+                        ctx.lineWidth = 3 / zoomLevel; // constant on-screen thickness
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
                         ctx.lineTo(x, y);
