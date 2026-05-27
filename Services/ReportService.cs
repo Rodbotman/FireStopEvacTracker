@@ -243,6 +243,7 @@ public class ReportService
             "Sent to Office" => new DeviceRgb(255, 193, 7), // Amber (#ffc107)
             "Sent to Customer" => new DeviceRgb(255, 235, 59), // Light Yellow (#ffeb3b)
             "Changes Needed" => new DeviceRgb(255, 87, 34), // Deep Orange (#ff5722)
+            "Changes Submitted" => new DeviceRgb(128, 0, 0), // Maroon (#800000)
             "Approved" => new DeviceRgb(139, 195, 74), // Light Green (#8bc34a)
             "Complete" => new DeviceRgb(156, 39, 176), // Purple (#9c27b0)
             _ => new DeviceRgb(230, 230, 230) // Gray
