@@ -46,10 +46,17 @@ public class PdfStorageService
         return (fileName, relativePath);
     }
 
+    // Source diagram pages are written as JPEG (much smaller than PNG for
+    // diagrams with colour blocks like 'YOU ARE HERE') so JobApprove loads
+    // fast on mobile. The markup canvas stays a transparent PNG saved to the
+    // DB, so the layered overlay still works.
+    private const string PageImageExtension = ".jpg";
+
     /// <summary>
-    /// Converts every page of the PDF to a separate PNG named &lt;base&gt;_page_N.png
-    /// (1-indexed). Also writes &lt;base&gt;.png pointing at page 1 for backward
-    /// compatibility with code paths that still ask for the legacy single image.
+    /// Converts every page of the PDF to a separate JPEG named
+    /// &lt;base&gt;_page_N.jpg (1-indexed). Also writes &lt;base&gt;.jpg
+    /// pointing at page 1 for backward compat with code paths that still
+    /// ask for the legacy single image.
     /// </summary>
     private async Task<int> ConvertPdfToImagesAsync(string pdfFullPath, string pdfFileName)
     {
@@ -66,18 +73,19 @@ public class PdfStorageService
             for (var i = 0; i < pageCount; i++)
             {
                 var pageNumber = i + 1;
-                var pageImageName = $"{baseName}_page_{pageNumber}.png";
+                var pageImageName = $"{baseName}_page_{pageNumber}{PageImageExtension}";
                 var pageImagePath = Path.Combine(folder, pageImageName);
 
-                if (await RunConvertAsync($"-density 200 \"{pdfFullPath}[{i}]\" -quality 85 \"{pageImagePath}\""))
+                // Flatten against white to avoid black-on-transparent in JPEG output
+                if (await RunConvertAsync($"-density 200 \"{pdfFullPath}[{i}]\" -background white -alpha remove -alpha off -quality 85 \"{pageImagePath}\""))
                     converted++;
             }
 
-            // Backward-compat: <base>.png mirrors page 1
+            // Backward-compat: <base>.jpg mirrors page 1
             if (converted > 0)
             {
-                var legacyPath = Path.Combine(folder, $"{baseName}.png");
-                var firstPagePath = Path.Combine(folder, $"{baseName}_page_1.png");
+                var legacyPath = Path.Combine(folder, $"{baseName}{PageImageExtension}");
+                var firstPagePath = Path.Combine(folder, $"{baseName}_page_1{PageImageExtension}");
                 if (File.Exists(firstPagePath))
                 {
                     try { File.Copy(firstPagePath, legacyPath, overwrite: true); }
@@ -176,17 +184,22 @@ public class PdfStorageService
         var baseName = Path.GetFileNameWithoutExtension(pdfFullPath);
         var pdfRelativeDir = pdfRelativePath.Substring(0, pdfRelativePath.LastIndexOf('/'));
 
-        // Look for existing _page_N.png files
-        var existing = Directory.GetFiles(folder, $"{baseName}_page_*.png")
+        // Look for existing page images. Match both .jpg (new) and .png
+        // (legacy, kept so old uploads keep rendering without re-conversion).
+        var existing = Directory.GetFiles(folder, $"{baseName}_page_*.*")
+            .Where(p => p.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                     || p.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
             .Select(p => Path.GetFileName(p))
             .OrderBy(name => ExtractPageNumber(name, baseName))
             .ToList();
 
         if (existing.Count == 0)
         {
-            // Lazy-generate for pre-multipage uploads (single-page legacy or no PNG yet)
+            // Lazy-generate (always produces .jpg now)
             await ConvertPdfToImagesAsync(pdfFullPath, Path.GetFileName(pdfFullPath));
-            existing = Directory.GetFiles(folder, $"{baseName}_page_*.png")
+            existing = Directory.GetFiles(folder, $"{baseName}_page_*.*")
+                .Where(p => p.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                         || p.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                 .Select(p => Path.GetFileName(p))
                 .OrderBy(name => ExtractPageNumber(name, baseName))
                 .ToList();
@@ -238,7 +251,10 @@ public class PdfStorageService
             snapshotsFolderRelative.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(snapshotsFolderFull);
 
-        var snapshotName = $"{approvalId}_page_{pageNumber}.png";
+        // Match the source extension so JPEG pages produce JPEG snapshots
+        var sourceExt = Path.GetExtension(sourceFull);
+        if (string.IsNullOrEmpty(sourceExt)) sourceExt = PageImageExtension;
+        var snapshotName = $"{approvalId}_page_{pageNumber}{sourceExt}";
         var snapshotFull = Path.Combine(snapshotsFolderFull, snapshotName);
 
         try
@@ -276,10 +292,16 @@ public class PdfStorageService
         if (string.IsNullOrWhiteSpace(pdfPath))
             return null;
 
-        var imagePath = Path.ChangeExtension(pdfPath, ".png");
-        var fullImagePath = Path.Combine(_environment.WebRootPath, imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-
-        return File.Exists(fullImagePath) ? imagePath : null;
+        // Try .jpg first (new) then .png (legacy)
+        foreach (var ext in new[] { ".jpg", ".png" })
+        {
+            var imagePath = Path.ChangeExtension(pdfPath, ext);
+            var fullImagePath = Path.Combine(_environment.WebRootPath,
+                imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(fullImagePath))
+                return imagePath;
+        }
+        return null;
     }
 
     public void DeletePdfIfExists(string? relativePath)
@@ -297,14 +319,18 @@ public class PdfStorageService
                 File.Delete(fullPath);
             }
 
-            // Also delete generated PNG previews (legacy + per-page)
+            // Also delete generated previews (legacy + per-page, both .png and .jpg)
             var folder = Path.GetDirectoryName(fullPath);
             var baseName = Path.GetFileNameWithoutExtension(fullPath);
             if (folder != null && Directory.Exists(folder))
             {
-                foreach (var png in Directory.GetFiles(folder, $"{baseName}*.png"))
+                foreach (var preview in Directory.GetFiles(folder, $"{baseName}*"))
                 {
-                    try { File.Delete(png); } catch { /* best-effort */ }
+                    var ext = Path.GetExtension(preview).ToLowerInvariant();
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
+                    {
+                        try { File.Delete(preview); } catch { /* best-effort */ }
+                    }
                 }
             }
         }

@@ -63,6 +63,7 @@
 
                     @{
                         var initialPageSrc = Model.PageImagePaths.FirstOrDefault()
+                            ?? Model.Job.DraftPdfPath?.Replace(".pdf", ".jpg")
                             ?? Model.Job.DraftPdfPath?.Replace(".pdf", ".png");
                     }
                     <div id="drawingContainer" style="position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; width: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" data-approval-id="@(Model.Approval?.Id ?? 0)">
