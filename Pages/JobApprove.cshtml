@@ -267,6 +267,9 @@
         canvas.style.cursor = 'crosshair';
         canvas.style.zIndex = '9999';
         canvas.style.backgroundColor = 'transparent';
+        canvas.style.touchAction = 'none'; // disable browser scroll/zoom inside the canvas
+        canvas.style.webkitUserSelect = 'none';
+        canvas.style.userSelect = 'none';
 
         container.appendChild(canvas);
         ctx = canvas.getContext('2d');
@@ -392,6 +395,112 @@
             isDrawing = false;
             ctx?.closePath();
         });
+
+        // ---- Mobile touch gestures ----
+        // 1 finger  = act like the current tool (draw / erase / pan)
+        // 2 fingers = pinch-zoom + drag-pan (regardless of selected tool)
+        let pinchInitialDistance = 0;
+        let pinchInitialZoom = 1;
+        let pinchInitialPanOffset = { x: 0, y: 0 };
+        let pinchInitialMidpoint = { x: 0, y: 0 };
+        let activeGesture = null; // 'draw' | 'pan' | 'pinch' | null
+
+        const touchDistance = (a, b) => {
+            const dx = a.clientX - b.clientX;
+            const dy = a.clientY - b.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        };
+        const touchMidpoint = (a, b) => ({
+            x: (a.clientX + b.clientX) / 2,
+            y: (a.clientY + b.clientY) / 2
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                if (currentTool === 'pan') {
+                    activeGesture = 'pan';
+                    isPanning = true;
+                    panStart = { x: t.clientX, y: t.clientY };
+                } else {
+                    activeGesture = 'draw';
+                    isDrawing = true;
+                    drawingHistory.push(canvas.toDataURL());
+                    const { x, y } = eventToCanvasCoords(t);
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                }
+            } else if (e.touches.length === 2) {
+                // Cancel any in-progress draw/pan and switch to pinch
+                isDrawing = false;
+                isPanning = false;
+                ctx?.closePath();
+                activeGesture = 'pinch';
+                const [t1, t2] = e.touches;
+                pinchInitialDistance = touchDistance(t1, t2);
+                pinchInitialZoom = zoomLevel;
+                pinchInitialPanOffset = { x: panOffset.x, y: panOffset.y };
+                pinchInitialMidpoint = touchMidpoint(t1, t2);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (activeGesture === 'pinch' && e.touches.length === 2 && pinchInitialDistance > 0) {
+                const [t1, t2] = e.touches;
+                const distance = touchDistance(t1, t2);
+                const midpoint = touchMidpoint(t1, t2);
+                const scale = distance / pinchInitialDistance;
+                zoomLevel = Math.max(1, Math.min(3, pinchInitialZoom * scale));
+                // Move panOffset by the midpoint delta (in pre-zoom screen pixels)
+                panOffset.x = pinchInitialPanOffset.x + (midpoint.x - pinchInitialMidpoint.x) / zoomLevel;
+                panOffset.y = pinchInitialPanOffset.y + (midpoint.y - pinchInitialMidpoint.y) / zoomLevel;
+                updateZoom();
+                return;
+            }
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                if (activeGesture === 'pan' && isPanning) {
+                    const dx = (t.clientX - panStart.x) / zoomLevel;
+                    const dy = (t.clientY - panStart.y) / zoomLevel;
+                    panOffset.x += dx;
+                    panOffset.y += dy;
+                    panStart = { x: t.clientX, y: t.clientY };
+                    updateZoom();
+                } else if (activeGesture === 'draw' && isDrawing) {
+                    const { x, y } = eventToCanvasCoords(t);
+                    if (currentTool === 'eraser') {
+                        ctx.clearRect(x - 10, y - 10, 20, 20);
+                    } else {
+                        ctx.strokeStyle = currentColor;
+                        ctx.lineWidth = 3;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }, { passive: false });
+
+        const endTouchGesture = (e) => {
+            // Only fully reset when ALL fingers are lifted; if one finger
+            // remains after a pinch, fall back to that finger's behaviour.
+            if (e.touches.length === 0) {
+                isDrawing = false;
+                isPanning = false;
+                activeGesture = null;
+                ctx?.closePath();
+            } else if (e.touches.length === 1 && activeGesture === 'pinch') {
+                // Drop pinch; keep the page idle until the user lifts and re-touches
+                activeGesture = null;
+                isDrawing = false;
+                isPanning = false;
+            }
+        };
+        canvas.addEventListener('touchend', endTouchGesture);
+        canvas.addEventListener('touchcancel', endTouchGesture);
     }
 
     // Prevent selection and drag
